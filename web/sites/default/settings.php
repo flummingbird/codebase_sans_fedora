@@ -1147,8 +1147,8 @@ $databases['default']['default'] = [
 ];
 
 // Flysystem
-$settings['flysystem']['fedora']['driver'] = 'fedora';
-$settings['flysystem']['fedora']['config']['root'] = file_get_contents($path . 'DRUPAL_DEFAULT_FCREPO_URL');
+//$settings['flysystem']['fedora']['driver'] = 'fedora';
+//$settings['flysystem']['fedora']['config']['root'] = file_get_contents($path . 'DRUPAL_DEFAULT_FCREPO_URL');
 
 // Change the php_storage settings in your setting.php. It is recommend that
 // this directory be outside out of the docroot.
