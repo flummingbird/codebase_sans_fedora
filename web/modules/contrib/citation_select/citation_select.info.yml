@@ -1,0 +1,13 @@
+name: Citation Select
+type: module
+description: Allows users to generate a citation based on a node.
+package: Custom
+core_version_requirement: ^8.8 || ^9 || ^10
+configure: citation_select.settings
+dependencies:
+  - drupal:token
+
+# Information added by Drupal.org packaging script on 2024-04-01
+version: '2.0.0-beta1'
+project: 'citation_select'
+datestamp: 1711983995

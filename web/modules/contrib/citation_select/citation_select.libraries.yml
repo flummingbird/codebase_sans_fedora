@@ -1,0 +1,16 @@
+clipboard_attach:
+  js:
+    js/clipboard-attach.js: {}
+  dependencies:
+    - core/drupal
+    - citation_select/clipboard.js
+
+citation_select_form:
+  css:
+    theme:
+      css/citation_select.css: {}
+
+
+clipboard.js:
+  js:
+    https://cdn.jsdelivr.net/npm/clipboard@2.0.10/dist/clipboard.min.js: { preprocess: false, external: true, minified: true }

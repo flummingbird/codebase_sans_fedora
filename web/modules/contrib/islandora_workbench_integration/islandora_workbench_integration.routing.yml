@@ -1,0 +1,26 @@
+islandora_workbench_integration.core_version:
+  path: '/islandora_workbench_integration/core_version'
+  defaults:
+    _controller: '\Drupal\islandora_workbench_integration\Controller\IslandoraWorkbenchIntegrationCoreVersionController::main'
+  requirements:
+    _permission: 'administer site configuration'
+  options:
+    _auth: ['basic_auth','jwt_auth','cookie']
+
+islandora_workbench_integration.version:
+  path: '/islandora_workbench_integration/version'
+  defaults:
+    _controller: '\Drupal\islandora_workbench_integration\Controller\IslandoraWorkbenchIntegrationVersionController::main'
+  requirements:
+    _permission: 'administer site configuration'
+  options:
+    _auth: ['basic_auth','jwt_auth','cookie']
+
+islandora_workbench_integration.file_hash:
+  path: '/islandora_workbench_integration/file_hash'
+  defaults:
+    _controller: '\Drupal\islandora_workbench_integration\Controller\IslandoraWorkbenchIntegrationGetHashController::main'
+  requirements:
+    _permission: 'administer site configuration'
+  options:
+    _auth: ['basic_auth','jwt_auth','cookie']

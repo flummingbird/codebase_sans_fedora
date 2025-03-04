@@ -1,0 +1,7 @@
+name: 'Nested Details View Style Plugin'
+type: module
+description: 'Nested Details View Style Plugin'
+core_version_requirement: '^9 || ^10'
+package: 'Islandora'
+dependencies:
+  - drupal:views

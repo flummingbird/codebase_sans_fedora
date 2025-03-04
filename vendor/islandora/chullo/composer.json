@@ -1,0 +1,60 @@
+{
+    "name": "islandora/chullo",
+    "description": "A PHP client for interacting with a Fedora 4 server.",
+    "type": "library",
+    "homepage": "https://github.com/Islandora/chullo",
+    "support": {
+        "issues": "https://github.com/Islandora/documentation/issues"
+    },
+    "require": {
+        "php": ">=7.4",
+        "guzzlehttp/guzzle": "^6.5.8 || ^7.4",
+        "easyrdf/easyrdf": "^1",
+        "ml/json-ld": "^1.0.4"
+    },
+    "require-dev": {
+        "donatj/mock-webserver": "^2.6",
+        "phpunit/phpunit": "^9.0",
+        "squizlabs/php_codesniffer": "^3.0",
+        "sebastian/phpcpd": "^6.0"
+    },
+    "scripts": {
+        "check": [
+            "vendor/bin/phpcs --standard=PSR2 src test",
+            "vendor/bin/phpcpd --suffix *.php src test"
+        ],
+        "test": [
+            "@check",
+            "vendor/bin/phpunit"
+        ]
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Islandora Foundation",
+            "email": "community@islandora.ca",
+            "role": "Owner"
+
+        },
+        {
+            "name": "Daniel Lamb",
+            "email": "dlamb@islandora.ca",
+            "role": "Maintainer"
+        },
+        {
+            "name": "Nick Ruest",
+            "email": "ruestn@gmail.com",
+            "role": "Maintainer"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Islandora\\Chullo\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Islandora\\Chullo\\Test\\": "test/"
+        }
+    }
+}

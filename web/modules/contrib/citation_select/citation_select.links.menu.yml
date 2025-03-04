@@ -1,0 +1,23 @@
+citation_select.settings:
+  title: 'Citation Select settings'
+  parent: system.admin_config
+  route_name: citation_select.settings
+  weight: 100
+
+citation_select.config:
+  title: 'Config'
+  parent: citation_select.settings
+  route_name: citation_select.settings
+  weight: 10
+
+citation_select.csl_styles:
+  title: 'CSL Styles'
+  parent: citation_select.settings
+  route_name: entity.citation_select_csl_style.collection
+  weight: 20
+
+citation_select.csl_mappings:
+  title: 'CSL Mappings'
+  parent: citation_select.settings
+  route_name: citation_select.csl_map
+  weight: 30

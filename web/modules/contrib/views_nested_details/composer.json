@@ -1,0 +1,7 @@
+{
+  "name": "islandora/views_nested_details",
+  "description": "views_nested_details",
+  "type": "drupal-module",
+  "license": "GPL-2.0+",
+  "homepage": "https://github.com/Islandora-Labs/views_nested_details"
+}

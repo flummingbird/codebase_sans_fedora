@@ -1,0 +1,175 @@
+<?php
+
+/**
+ * @file
+ * Main functions and template preprocessor.
+ */
+
+use Drupal\file\Entity\File;
+use Drupal\Core\Cache\CacheableMetadata;
+use Drupal\Core\Template\Attribute;
+use Drupal\Core\Url;
+use Drupal\Component\Utility\Html;
+
+/**
+ * Implements hook_theme().
+ */
+function openseadragon_theme() {
+  return [
+    'openseadragon_formatter' => [
+      'variables' => [
+        'item' => NULL,
+        'entity' => NULL,
+        'settings' => NULL,
+      ],
+    ],
+    'openseadragon_iiif_manifest_block' => [
+      'variables' => [
+        'iiif_manifest_url' => NULL,
+      ],
+    ],
+  ];
+}
+
+/**
+ * Implements template_preprocess_HOOK().
+ */
+function template_preprocess_openseadragon_formatter(&$variables) {
+  // Load the global settings.
+  $config = \Drupal::service('openseadragon.config');
+  $fileinfo_service = \Drupal::service('openseadragon.fileinfo');
+
+  // Initialize our attributes.
+  $variables['attributes'] = new Attribute();
+
+  $cache_meta = CacheableMetadata::createFromRenderArray($variables)
+    ->addCacheableDependency($config);
+
+  $classes_array = ['openseadragon-viewer'];
+  $viewer_settings = $config->getSettings(TRUE);
+  $iiif_address = $config->getIiifAddress();
+  if (is_null($iiif_address) || empty($iiif_address)) {
+    $cache_meta->applyTo($variables);
+    return;
+  }
+
+  $item = $variables['item'];
+  $entity = $variables['entity'];
+  $cache_meta->addCacheableDependency($entity);
+
+  // Build the gallery id.
+  $id = $entity->id();
+  $openseadragon_viewer_id = 'openseadragon-viewer-' . $id;
+  $field_name = $item->getParent()->getName();
+
+  $tile_sources = [];
+  $field_value = $entity->get($field_name)->getValue();
+  foreach ($field_value as $value) {
+    // Load the image and take file uri.
+    if (isset($value['target_id'])) {
+      $fid = $value['target_id'];
+      $file = File::load($fid);
+      $access_result = $file->access('view', NULL, TRUE);
+      $cache_meta->addCacheableDependency($file)
+        ->addCacheableDependency($access_result);
+
+      if (!$access_result->isAllowed()) {
+        continue;
+      }
+
+      $resource = $fileinfo_service->getFileData($file);
+      if (isset($resource['full_path'])) {
+        $tile_sources[] = rtrim($iiif_address, '/') . '/' . urlencode($resource['full_path']);
+      }
+    }
+  }
+
+  if (!empty($tile_sources)) {
+    $viewer_settings['sequenceMode'] = count($tile_sources) > 1 && !$viewer_settings['collectionMode'];
+    $variables['#attached']['library'] = [
+      'openseadragon/init',
+    ];
+    $variables['#attached']['drupalSettings']['openseadragon'][$openseadragon_viewer_id] = [
+      'basePath' => Url::fromUri($iiif_address),
+      'fitToAspectRatio' => $viewer_settings['fit_to_aspect_ratio'],
+      'options' => [
+        'id' => $openseadragon_viewer_id,
+        'prefixUrl' => 'https://cdnjs.cloudflare.com/ajax/libs/openseadragon/2.4.2/images/',
+        'tileSources' => $tile_sources,
+      ] + $viewer_settings,
+    ];
+
+    $variables['attributes']['class'] = $classes_array;
+    $variables['attributes']['id'] = $openseadragon_viewer_id;
+  }
+
+  $cache_meta->applyTo($variables);
+}
+
+/**
+ * Implements template_preprocess_HOOK().
+ */
+function template_preprocess_openseadragon_iiif_manifest_block(&$variables) {
+  $cache_meta = CacheableMetadata::createFromRenderArray($variables);
+
+  // Get the tile sources from the manifest.
+  $parser = \Drupal::service('openseadragon.manifest_parser');
+  $tile_sources = $parser->getTileSources($variables['iiif_manifest_url']);
+
+  if (empty($tile_sources)) {
+    $cache_meta->applyTo($variables);
+    return;
+  }
+
+  // Load the global settings.
+  $config = \Drupal::service('openseadragon.config');
+  $cache_meta->addCacheableDependency($config);
+
+  // Build the gallery id.
+  $openseadragon_viewer_id = Html::getUniqueId('openseadragon-viewer-iiif-manifest-block');
+
+  $classes_array = ['openseadragon-viewer'];
+  $viewer_settings = $config->getSettings(TRUE);
+  $iiif_address = $config->getIiifAddress();
+
+  $viewer_settings['sequenceMode'] = count($tile_sources) > 1 && !$viewer_settings['collectionMode'];
+
+  $variables['attributes'] = new Attribute();
+
+  // Attach the viewer, using the image urls obtained from the manifest.
+  if (!is_null($iiif_address) && !empty($iiif_address) && !empty($tile_sources)) {
+    $variables['#attached']['library'] = [
+      'openseadragon/init',
+    ];
+    $variables['#attached']['drupalSettings']['openseadragon'][$openseadragon_viewer_id] = [
+      'basePath' => Url::fromUri($iiif_address),
+      'fitToAspectRatio' => $viewer_settings['fit_to_aspect_ratio'],
+      'options' => [
+        'id' => $openseadragon_viewer_id,
+        'prefixUrl' => 'https://cdnjs.cloudflare.com/ajax/libs/openseadragon/2.4.2/images/',
+        'tileSources' => $tile_sources,
+      ] + $viewer_settings,
+    ];
+
+    $variables['attributes']['class'] = $classes_array;
+    $variables['attributes']['id'] = $openseadragon_viewer_id;
+  }
+
+  $cache_meta->applyTo($variables);
+}
+
+/**
+ * Implements hook_file_mimetype_mapping_alter().
+ */
+function islandora_image_file_mimetype_mapping_alter(&$mapping) {
+  // Add new MIME type 'image/jp2'.
+  if (!in_array('image/jp2', $mapping['mimetypes'])) {
+    $mapping['mimetypes']['JP2'] = 'image/jp2';
+    $mapping['extensions']['jp2'] = 'JP2';
+  }
+  // Add Tiff extensions.
+  if (!in_array('image/tiff', $mapping['mimetypes'])) {
+    $mapping['mimetypes']['TIFF'] = "image/tiff";
+    $mapping['extensions']['tiff'] = 'TIFF';
+  }
+}

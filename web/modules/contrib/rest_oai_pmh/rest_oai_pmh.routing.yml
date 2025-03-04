@@ -1,0 +1,19 @@
+rest_oai_pmh.rest_oai_pmh_settings_form:
+  path: '/admin/config/services/rest/oai-pmh'
+  defaults:
+    _form: '\Drupal\rest_oai_pmh\Form\RestOaiPmhSettingsForm'
+    _title: 'REST OAI-PMH Settings'
+  requirements:
+    _permission: 'administer rest resources'
+  options:
+    _admin_route: TRUE
+
+rest_oai_pmh.queue:
+  path: '/admin/config/services/rest/oai-pmh/queue'
+  defaults:
+    _form: '\Drupal\rest_oai_pmh\Form\OaiPmhQueueForm'
+    _title: 'REST OAI-PMH Queue'
+  requirements:
+    _permission: 'administer rest resources'
+  options:
+    _admin_route: TRUE

@@ -1,0 +1,28 @@
+{
+    "name": "drupal/field_report",
+    "type": "drupal-module",
+    "description": "Generates a report page that organizes fields by content/entity type.",
+    "keywords": [
+        "Drupal",
+        "Fields",
+        "Field Report",
+        "Reports"
+    ],
+    "license": "GPL-2.0-or-later",
+    "minimum-stability": "dev",
+    "homepage": "https://www.drupal.org/project/field_report",
+    "authors": [
+        {
+            "name": "George Anderson (geoanders)",
+            "homepage": "https://www.drupal.org/u/geoanders",
+            "role": "Maintainer"
+        }
+    ],
+    "support": {
+        "issues": "https://www.drupal.org/project/issues/field_report",
+        "source": "https://git.drupalcode.org/project/field_report"
+    },
+    "require": {
+        "drupal/core": "^8.8 || ^9 || ^10"
+    }
+}

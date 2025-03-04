@@ -1,0 +1,38 @@
+# This .info.yml files provides the basic information about our module to Drupal
+# More: https://www.drupal.org/node/2000204
+name: 'islandora'
+description: "Islandora Core"
+type: module
+package: Islandora
+core_version_requirement: ^10.2
+dependencies:
+  - context:context_ui
+  - ctools:ctools
+  - drupal:action
+  - drupal:basic_auth
+  - drupal:block
+  - drupal:content_translation
+  - drupal:link
+  - drupal:media
+  - drupal:node
+  - drupal:options
+  - drupal:path
+  - drupal:rest
+  - drupal:taxonomy
+  - drupal:text
+  - drupal:views_ui
+  - eva:eva
+  - file_replace:file_replace
+  - filehash:filehash
+  - flysystem:flysystem
+  - jsonld:jsonld
+  - jwt:jwt
+  - migrate_source_csv:migrate_source_csv
+  - prepopulate:prepopulate
+  - search_api:search_api
+  - token:token
+
+# Information added by Drupal.org packaging script on 2025-02-05
+version: '2.13.3'
+project: 'islandora'
+datestamp: 1738777080

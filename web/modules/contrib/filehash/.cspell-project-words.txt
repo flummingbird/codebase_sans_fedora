@@ -1,0 +1,12 @@
+autohash
+Burdett
+compat
+DEDUPE
+Dedupe
+dedupe
+fgen
+filehash
+generichash
+pairtree
+paragonie
+yzalis

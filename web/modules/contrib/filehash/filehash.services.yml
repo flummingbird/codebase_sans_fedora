@@ -1,0 +1,21 @@
+services:
+
+  filehash.config_subscriber:
+    class: Drupal\filehash\EventSubscriber\FileHashConfigSubscriber
+    arguments: ['@cache_tags.invalidator', '@filehash', '@module_handler']
+    tags:
+      - { name: event_subscriber }
+
+  filehash.file_validation_subscriber:
+    class: Drupal\filehash\EventSubscriber\FileValidationSubscriber
+    arguments: ['@config.factory', '@validation.constraint', '@file.recursive_validator']
+    tags:
+      - { name: event_subscriber }
+
+  filehash:
+    class: Drupal\filehash\FileHash
+    arguments: ['@config.factory', '@entity.definition_update_manager', '@filehash.memory_cache', '@entity_type.manager']
+
+  filehash.memory_cache:
+    class: Drupal\Core\Cache\MemoryCache\MemoryCache
+    arguments: ['@datetime.time']

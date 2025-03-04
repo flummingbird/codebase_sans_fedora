@@ -1,0 +1,20 @@
+# Menu list of Islandora configuration forms 
+system.admin_config_islandora:
+  title: Islandora
+  parent: system.admin_config
+  route_name: system.admin_config_islandora 
+  weight: 100
+
+# Core Islandora configuration form 
+system.islandora_settings:
+  title: 'Core Settings'
+  parent: system.admin_config_islandora
+  route_name: system.islandora_settings 
+  description: 'Confgure core Islandora settings'
+
+# RDF property mappings
+system.islandora_rdf_mappings:
+  title: 'Field and term RDF mappings'
+  parent: system.admin_reports
+  description: 'List of configured Drupal field to RDF property mappings and taxonomy term linked data URIs.'
+  route_name: system.islandora_rdf_mappings

@@ -1,0 +1,34 @@
+{
+    "name": "drupal/filehash",
+    "description": "File Hash module generates and stores hashes for each file uploaded to the site.",
+    "type": "drupal-module",
+    "license": "GPL-2.0-or-later",
+    "homepage": "https://www.drupal.org/project/filehash",
+    "support": {
+        "issues": "https://www.drupal.org/project/issues/filehash",
+        "source": "https://git.drupalcode.org/project/filehash"
+    },
+    "authors": [
+        {
+            "name": "Mark Burdett (mfb)",
+            "homepage": "https://www.drupal.org/u/mfb",
+            "role": "Maintainer"
+        }
+    ],
+    "funding": [
+        {
+            "type": "github",
+            "url": "https://github.com/sponsors/mfb"
+        },
+        {
+            "type": "patreon",
+            "url": "https://www.patreon.com/mfb"
+        }
+    ],
+    "require-dev": {
+        "drush/drush": "^12.0"
+    },
+    "suggest": {
+        "yzalis/identicon": "^2.0"
+    }
+}

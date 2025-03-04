@@ -1,0 +1,4 @@
+field_report.fields_report:
+  route_name: field_report.fields_report
+  title: 'Field Report'
+  base_route: entity.field_storage_config.collection

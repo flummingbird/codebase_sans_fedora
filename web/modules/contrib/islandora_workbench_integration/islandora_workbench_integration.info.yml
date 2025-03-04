@@ -1,0 +1,8 @@
+name: 'Islandora Workbench Integration'
+description: "Utilities for use with Islandora Workbench."
+type: module
+package: Islandora
+core_version_requirement: ^9 || ^10
+dependencies:
+  - islandora
+version: '1.0.0'

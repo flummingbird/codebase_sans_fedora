@@ -1,0 +1,141 @@
+<?php
+
+/**
+ * @file
+ * Generate hashes for each uploaded file.
+ */
+
+use Drupal\Core\Config\Entity\ThirdPartySettingsInterface;
+use Drupal\Core\Entity\EntityFormInterface;
+use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\field\FieldConfigInterface;
+use Drupal\file\FileInterface;
+use Drupal\file\Plugin\Field\FieldType\FileFieldItemList;
+use Drupal\filehash\FileHashInterface;
+
+/**
+ * Implements hook_entity_base_field_info().
+ *
+ * @phpstan-ignore-next-line Hook implementations should not duplicate @return
+ * documentation.
+ */
+function filehash_entity_base_field_info(EntityTypeInterface $entity_type): array {
+  if ('file' === $entity_type->id()) {
+    return Drupal::service('filehash')->entityBaseFieldInfo();
+  }
+  return [];
+}
+
+/**
+ * Implements hook_entity_storage_load().
+ *
+ * Generates hash if it does not already exist for the file.
+ *
+ * @phpstan-ignore-next-line Hook implementations should not duplicate @param
+ * documentation.
+ */
+function filehash_entity_storage_load(array $files, $entity_type): void {
+  if ('file' === $entity_type) {
+    Drupal::service('filehash')->entityStorageLoad($files);
+  }
+}
+
+/**
+ * Implements hook_field_widget_single_element_form_alter().
+ *
+ * @phpstan-ignore-next-line Hook implementations should not duplicate @param
+ * documentation.
+ */
+function filehash_field_widget_single_element_form_alter(&$element, FormStateInterface $form_state, $context): void {
+  if ((!isset($element['#type']) || $element['#type'] !== 'managed_file') && !isset($element['entity_browser']['#widget_context']['upload_validators'])) {
+    return;
+  }
+  $definition = $context['items']->getFieldDefinition();
+  if (!$definition instanceof ThirdPartySettingsInterface) {
+    return;
+  }
+  $settings = $definition->getThirdPartySettings('filehash');
+  if (empty($settings['dedupe'])) {
+    return;
+  }
+  $options['strict'] = FileHashInterface::STRICT_DEDUPE == $settings['dedupe'];
+  $options['original'] = !empty($settings['dedupe_original']);
+  if (isset($element['#type']) && $element['#type'] === 'managed_file') {
+    $element['#upload_validators']['FileHashDedupe'] = $options;
+  }
+  // @fixme Figure out the right way to add upload validators to entity browser.
+  elseif (isset($element['entity_browser']['#widget_context']['upload_validators'])) {
+    $element['entity_browser']['#widget_context']['upload_validators']['FileHashDedupe'] = $options;
+  }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_create().
+ */
+function filehash_file_create(FileInterface $file): void {
+  Drupal::service('filehash')->hash($file, NULL, (bool) Drupal::config('filehash.settings')->get('original'));
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_presave().
+ */
+function filehash_file_presave(FileInterface $file): void {
+  Drupal::service('filehash')->filePresave($file);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * @phpstan-ignore-next-line Hook implementations should not duplicate @param
+ * documentation.
+ */
+function filehash_form_field_config_edit_form_alter(array &$form, FormStateInterface $form_state): void {
+  if (!($form_state->getFormObject() instanceof EntityFormInterface)) {
+    return;
+  }
+  $field = $form_state->getFormObject()->getEntity();
+  if (!($field instanceof FieldConfigInterface)) {
+    return;
+  }
+  if (!is_a($field->getClass(), FileFieldItemList::class, TRUE)) {
+    return;
+  }
+  $settings = $field->getThirdPartySettings('filehash');
+  $form['settings']['filehash'] = [
+    '#type'    => 'container',
+    '#tree'    => TRUE,
+    '#parents' => ['third_party_settings', 'filehash'],
+  ];
+  $form['settings']['filehash']['dedupe'] = [
+    '#type'          => 'radios',
+    '#title'         => t('Disallow duplicate files'),
+    '#options'       => [t('Off'), t('Enabled'), t('Strict')],
+    '#default_value' => $settings['dedupe'] ?? 0,
+    '#description'   => t('If enabled, prevent duplicate uploaded files from being saved when the file already exists as a permanent file. If strict, also include temporary files in the duplicate check, which prevents duplicates from being uploaded at the same time. Note, enabling this setting has privacy implications, as it allows users to determine if a particular file has been uploaded to the site.'),
+  ];
+  $form['settings']['filehash']['dedupe_original'] = [
+    '#default_value' => $settings['dedupe_original'] ?? FALSE,
+    '#description' => t('If checked, also prevent an uploaded file from being saved if its hash matches the "original" hash of another file. This is useful if you apply processing to uploaded files, and want to check uploads against both the original and derivative file hash. Only active if original file hash is enabled in File Hash settings, and the above dedupe setting is enabled (or strict).'),
+    '#title' => t('Include original file hashes in duplicate check'),
+    '#type' => 'checkbox',
+  ];
+}
+
+/**
+ * Implements hook_help().
+ *
+ * @phpstan-ignore-next-line Hook implementations should not duplicate @param
+ * documentation.
+ */
+function filehash_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    case 'help.page.filehash':
+    case 'filehash.admin':
+      $output = array_fill(0, 2, ['#type' => 'html_tag', '#tag' => 'p']);
+      $output[0]['#value'] = t('File Hash module generates and stores hashes for each file uploaded to the site. Hashes allow files to be uniquely identified, duplicate files to be detected, and copies to be verified against the original source.');
+      $output[1]['#value'] = function_exists('sodium_crypto_generichash_init') ? t('Note, the BLAKE2b hash algorithm requires the Sodium PHP extension, which is currently enabled.') : t('Note, the BLAKE2b hash algorithm requires the Sodium PHP extension, which is not currently enabled.');
+      return $output;
+  }
+}

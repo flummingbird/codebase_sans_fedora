@@ -1,0 +1,5 @@
+field_report.fields_report:
+  title: 'Field Report'
+  description: 'Overview of fields on all entity bundles.'
+  route_name: field_report.fields_report
+  parent: entity.field_storage_config.collection

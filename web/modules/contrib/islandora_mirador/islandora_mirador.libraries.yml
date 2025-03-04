@@ -1,0 +1,21 @@
+mirador:
+  version: 3.3.0
+  remote: https://projectmirador.org
+  license:
+    name: Apache license
+    url: https://github.com/ProjectMirador/mirador/blob/master/LICENSE
+    gpl-compatible: true
+  js:
+    https://roblib.github.io/mirador-integration-islandora/islandora-mirador-0.1.0.js: { type: external, minified: true}
+viewer:
+  version: 1.x
+  js:
+    js/mirador_viewer.js: {preprocess: false}
+  css:
+    theme:
+      css/mirador.css: {}
+  dependencies:
+    - core/once
+    - core/drupal
+    - core/drupalSettings
+    - islandora_mirador/mirador

@@ -1,0 +1,6 @@
+advanced_search.settings:
+  title: 'Advanced Search Settings'
+  route_name: advanced_search.settings
+  description: 'Configure Islandora Advanced Search settings'
+  parent: system.admin_config_search
+  weight: 99

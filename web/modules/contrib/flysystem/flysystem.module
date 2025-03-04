@@ -1,0 +1,82 @@
+<?php
+
+/**
+ * @file
+ * Provides access to various filesystem backends using Flysystem.
+ */
+
+use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Site\Settings;
+use Drupal\Core\StreamWrapper\StreamWrapperManager;
+use Drupal\file\FileInterface;
+
+/**
+ * Implements hook_cron().
+ */
+function flysystem_cron() {
+  Drupal::service('flysystem_factory')->ensure();
+}
+
+/**
+ * Implements hook_rebuild().
+ */
+function flysystem_rebuild() {
+  Drupal::service('flysystem_factory')->ensure();
+}
+
+/**
+ * Implements hook_file_download().
+ */
+function flysystem_file_download($uri) {
+  $schemes = Drupal::service('flysystem_factory')->getSchemes();
+  $scheme = StreamWrapperManager::getScheme($uri);
+
+  if (!$scheme || !in_array($scheme, $schemes, TRUE)) {
+    return;
+  }
+
+  if (!file_exists($uri)) {
+    return;
+  }
+
+  return [
+    'Content-Type' => Drupal::service('file.mime_type.guesser.extension')->guessMimeType($uri),
+    'Content-Length' => filesize($uri),
+  ];
+}
+
+/**
+ * Implements hook_entity_access().
+ *
+ * @see Drupal\file\FileAccessControlHandler
+ */
+function flysystem_entity_access(EntityInterface $entity, $operation, AccountInterface $account) {
+  if (!$entity instanceof FileInterface) {
+    return AccessResult::neutral();
+  }
+
+  if (!in_array($operation, ['download', 'view'])) {
+    return AccessResult::neutral();
+  }
+
+  $schemes = Drupal::service('flysystem_factory')->getSchemes();
+  $scheme = StreamWrapperManager::getScheme($entity->getFileUri());
+
+  if (!$scheme || !in_array($scheme, $schemes, TRUE)) {
+    return AccessResult::neutral();
+  }
+
+  $settings = Settings::get('flysystem', []);
+
+  if (empty($settings[$scheme]['config']['public'])) {
+    return AccessResult::neutral();
+  }
+
+  if ($operation === 'download') {
+    return AccessResult::allowed();
+  }
+
+  return AccessResult::allowedIfHasPermission($account, 'access content');
+}

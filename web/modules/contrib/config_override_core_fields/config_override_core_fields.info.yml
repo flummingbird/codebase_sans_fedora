@@ -1,0 +1,11 @@
+name: 'Config Override Core Fields'
+type: module
+description: 'Provides hints to how form elements map to configuration objects.'
+core_version_requirement: '>=10'
+php: 8.1
+package: 'Administration'
+
+# Information added by Drupal.org packaging script on 2023-08-28
+version: '4.0.0'
+project: 'config_override_core_fields'
+datestamp: 1693238349

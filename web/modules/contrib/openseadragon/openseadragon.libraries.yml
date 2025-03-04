@@ -1,0 +1,21 @@
+init:
+  version: 1.x
+  js:
+    js/openseadragon_viewer.js: {}
+  css:
+    component:
+      css/openseadragon.css: {}
+  dependencies:
+    - core/drupal
+    - core/once
+    - core/drupalSettings
+    - openseadragon/openseadragon
+openseadragon:
+  remote: https://openseadragon.github.io
+  version: 2.4.2
+  license:
+    name: New BSD
+    url: https://openseadragon.github.io/license/
+    gpl-compatible: true
+  js:
+    https://cdnjs.cloudflare.com/ajax/libs/openseadragon/2.4.2/openseadragon.min.js: { type: external, minified: true }

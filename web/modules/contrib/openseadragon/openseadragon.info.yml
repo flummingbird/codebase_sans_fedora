@@ -1,0 +1,13 @@
+name: 'OpenSeadragon Viewer'
+type: module
+description: 'A light-weight, customizable OpenSeadragon field formatter'
+package: Media
+core_version_requirement: ^9.1 || ^10 || ^11
+dependencies:
+  - token:token
+configure: openseadragon.admin_settings
+
+# Information added by Drupal.org packaging script on 2024-10-28
+version: '2.2.2'
+project: 'openseadragon'
+datestamp: 1730133224

@@ -1,0 +1,10 @@
+admin:
+  version: VERSION
+  css:
+    theme:
+      css/admin.css: {}
+field:
+  version: VERSION
+  css:
+    theme:
+      css/field.css: {}

@@ -1,0 +1,252 @@
+islandora.settings:
+  type: config_object
+  label: 'Islandora Core Settings'
+  mapping:
+    broker_url:
+      type: string
+      label: 'Url to connect to message broker'
+    fedora_rest_endpoint:
+      type: string
+      label: 'Url to Fedora instance'
+    broadcast_queue:
+      type: string
+      label: 'Queue that handles distributing messages amongst multiple recipients'
+    jwt_expiry:
+      type: string
+      label: 'How long JWTs should last before expiring.'
+    delete_media_and_files:
+      type: boolean
+      label: 'Node Delete with Media and Files'
+    redirect_after_media_save:
+      type: boolean
+      label: 'Redirect to node after media save.'
+    upload_form_location:
+      type: string
+      label: 'Upload Form Location'
+    upload_form_allowed_mimetypes:
+      type: string
+      label: 'Upload Form Allowed Extensions'
+    gemini_pseudo_bundles:
+      type: sequence
+      label: 'List of node, media and taxonomy terms that should include the linked Fedora URI'
+      sequence:
+        type: string
+
+
+action.configuration.emit_node_event:
+  type: mapping
+  label: 'Emit a Node event to a queue/topic'
+  mapping:
+    queue:
+      type: text
+      label: 'Queue'
+    event:
+      type: text
+      label: 'Event Type'
+
+action.configuration.emit_media_event:
+  type: mapping
+  label: 'Emit a Media event to a queue/topic'
+  mapping:
+    queue:
+      type: text
+      label: 'Queue'
+    event:
+      type: text
+      label: 'Event Type'
+
+action.configuration.emit_file_event:
+  type: mapping
+  label: 'Emit a File event to a queue/topic'
+  mapping:
+    queue:
+      type: text
+      label: 'Queue'
+    event:
+      type: text
+      label: 'Event Type'
+
+action.configuration.emit_term_event:
+  type: mapping
+  label: 'Emit a Taxonomy Term event to a queue/topic'
+  mapping:
+    queue:
+      type: text
+      label: 'Queue'
+    event:
+      type: text
+      label: 'Event Type'
+
+action.configuration.delete_media_and_file:
+  type: action_configuration_default
+  label: 'Delete media and file'
+
+action.configuration.delete_node_and_media:
+  type: action_configuration_default
+  label: 'Delete node and media'
+
+condition.plugin.node_has_term:
+  type: condition.plugin
+  mapping:
+    uri:
+      type: text
+      label: 'Taxonomy Term URI'
+    logic:
+      type: string
+      label: 'Logic (AND or OR)'
+    tids:
+      type: sequence
+      sequence:
+        type: mapping
+        mapping:
+          target_id:
+            type: integer
+            label: The target taxonomy term IDs
+
+condition.plugin.node_has_parent:
+  type: condition.plugin
+  mapping:
+    parent_nid:
+      type: integer
+      label: 'Parent node'
+    parent_reference_field:
+      type: string
+      label: 'Parent reference field'
+
+condition.plugin.media_has_term:
+  type: condition.plugin
+  mapping:
+    uri:
+      type: text
+      label: 'Taxonomy Term URI'
+    logic:
+      type: string
+      label: 'Logic (AND or OR)'
+
+condition.plugin.parent_node_has_term:
+  type: condition.plugin
+  mapping:
+    uri:
+      type: text
+      label: 'Taxonomy Term URI'
+    logic:
+      type: string
+      label: 'Logic (AND or OR)'
+
+condition.plugin.file_uses_filesystem:
+  type: condition.plugin
+  mapping:
+    filesystems:
+      type: sequence
+      sequence:
+        type: string
+
+condition.plugin.media_uses_filesystem:
+  type: condition.plugin
+  mapping:
+    filesystems:
+      type: sequence
+      sequence:
+        type: string
+
+condition.plugin.media_has_mimetype:
+  type: condition.plugin
+  mapping:
+    mimetypes:
+      type: text
+      label: 'Mime types'
+
+condition.plugin.content_entity_type:
+  type: condition.plugin
+  mapping:
+    types:
+      type: sequence
+      sequence:
+        type: string
+
+condition.plugin.node_had_namespace:
+  type: condition.plugin
+  mapping:
+    namespace:
+      type: text
+      label: 'Namespace'
+    pid_field:
+      type: ignore
+      label: 'PID field'
+
+field.formatter.settings.islandora_image:
+  type: field.formatter.settings.image
+  label: 'Islandora image field display format settings'
+  mapping:
+    image_alt_text:
+      type: string
+      label: "Alt text source"
+
+condition.plugin.islandora_entity_bundle:
+  type: condition.plugin
+  mapping:
+    bundles:
+      type: sequence
+      sequence:
+        type: string
+
+condition.plugin.media_source_mimetype:
+  type: condition.plugin
+  mapping:
+    mimetype:
+      type: string
+
+reaction.plugin.alter_jsonld_type:
+  type: islandora.reaction_plugin_with_saved
+  mapping:
+    source_field:
+      type: string
+
+islandora.reaction_plugin_with_saved:
+  type: reaction.plugin
+  mapping:
+    saved:
+      type: boolean
+      label: Default config upstream; however, left undefined in the schema.
+
+reaction.plugin.islandora_map_uri_predicate:
+  type: islandora.reaction_plugin_with_saved
+  mapping:
+    drupal_uri_predicate:
+      type: string
+
+reaction.plugin.view_mode_alter:
+  type: islandora.reaction_plugin_with_saved
+  mapping:
+    mode:
+      type: string
+      label: The view mode to which to switch
+
+islandora.reaction.actions:
+  type: islandora.reaction_plugin_with_saved
+  mapping:
+    actions:
+      type: sequence
+      sequence:
+        type: string
+
+reaction.plugin.index:
+  type: islandora.reaction.actions
+
+reaction.plugin.delete:
+  type: islandora.reaction.actions
+
+reaction.plugin.derivative:
+  type: islandora.reaction.actions
+
+field.widget.settings.media_track:
+  type: field.widget.settings.file_generic
+
+field.field_settings.media_track:
+  type: field.field_settings.file
+  mapping:
+    languages:
+      type: string
+
+field.storage_settings.media_track:
+  type: field.storage_settings.file

@@ -1,0 +1,11 @@
+name: 'Jsonld hook tests'
+type: module
+package: Testing
+core_version_requirement: ^8 || ^9 || ^10 || ^11
+dependencies:
+  - jsonld
+
+# Information added by Drupal.org packaging script on 2025-02-05
+version: '3.0.3'
+project: 'jsonld'
+datestamp: 1738775629

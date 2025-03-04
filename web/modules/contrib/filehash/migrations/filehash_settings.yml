@@ -1,0 +1,24 @@
+id: filehash_settings
+label: File Hash settings
+migration_tags:
+  - Drupal 7
+  - Configuration
+source:
+  plugin: variable
+  variables:
+    - filehash_algos
+    - filehash_dedupe
+  source_module: filehash
+process:
+  algorithms:
+    plugin: callback
+    callable:
+      - 'Drupal\filehash\Form\FileHashConfigForm'
+      - checkboxesToBooleans
+    source:
+      - filehash_algos
+    unpack_source: true
+  dedupe: filehash_dedupe
+destination:
+  plugin: config
+  config_name: filehash.settings

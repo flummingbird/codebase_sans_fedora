@@ -1,0 +1,14 @@
+name: 'JSON-LD'
+type: module
+description: 'Serializes entities to JSON-LD / LDP for the Islandora Project'
+package: Web services
+core_version_requirement: ^10.3 || ^11
+dependencies:
+  - drupal:serialization
+  - hal:hal
+  - rdf:rdf
+
+# Information added by Drupal.org packaging script on 2025-02-05
+version: '3.0.3'
+project: 'jsonld'
+datestamp: 1738775629

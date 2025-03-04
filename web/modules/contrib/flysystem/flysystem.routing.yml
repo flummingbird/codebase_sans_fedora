@@ -1,0 +1,35 @@
+flysystem.files:
+  path: '/_flysystem/{scheme}'
+  defaults:
+    _controller: 'Drupal\system\FileDownloadController::download'
+    _disable_route_normalizer: TRUE
+  requirements:
+    # Permissions are handled through Drupal file create / update permissions
+    _access: 'TRUE'
+    scheme: '^[a-zA-Z0-9+.-]+$'
+  options:
+    _maintenance_access: TRUE
+
+flysystem.serve:
+  path: '/_flysystem/{scheme}/{filepath}'
+  defaults:
+    _controller: 'Drupal\system\FileDownloadController::download'
+    _disable_route_normalizer: TRUE
+  requirements:
+  # Permissions are handled through Drupal access content permissions
+    _access: 'TRUE'
+    scheme: '^[a-zA-Z0-9+.-]+$'
+    filepath: .+
+  options:
+    _maintenance_access: TRUE
+
+flysystem.config:
+  path: '/admin/config/media/file-system/flysystem'
+  defaults:
+    _form: 'Drupal\flysystem\Form\ConfigForm'
+    _title: Flysystem
+  requirements:
+    _permission: 'administer flysystem'
+
+route_callbacks:
+  - 'Drupal\flysystem\Routing\FlysystemRoutes::routes'

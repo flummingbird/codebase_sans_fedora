@@ -1,0 +1,15 @@
+name: 'Islandora Mirador'
+type: module
+description: 'Configuration for a Mirador Block'
+core_version_requirement: ^9.3 || ^10
+package: 'Islandora'
+dependencies:
+  - drupal:block
+  - islandora:islandora_iiif
+  - token:token
+configure: islandora_mirador.miradorconfig
+
+# Information added by Drupal.org packaging script on 2024-10-28
+version: '2.3.9'
+project: 'islandora_mirador'
+datestamp: 1730123179

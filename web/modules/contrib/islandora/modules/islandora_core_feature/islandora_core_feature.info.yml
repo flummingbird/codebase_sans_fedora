@@ -1,0 +1,32 @@
+name: 'Islandora Core Feature'
+description: 'Minimum configuration required for Islandora.'
+type: module
+core_version_requirement: ^9 || ^10
+dependencies:
+  - drupal:basic_auth
+  - drupal:content_translation
+  - drupal:eva
+  - drupal:field
+  - drupal:file
+  - drupal:filehash
+  - drupal:image
+  - drupal:islandora
+  - drupal:jsonld
+  - drupal:jwt
+  - drupal:language
+  - drupal:link
+  - drupal:media
+  - drupal:migrate_plus
+  - drupal:node
+  - drupal:rest
+  - drupal:serialization
+  - drupal:system
+  - drupal:taxonomy
+  - drupal:user
+  - drupal:views
+package: Islandora
+
+# Information added by Drupal.org packaging script on 2025-02-05
+version: '2.13.3'
+project: 'islandora'
+datestamp: 1738777080

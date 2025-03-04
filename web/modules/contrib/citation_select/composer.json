@@ -1,0 +1,19 @@
+{
+  "name": "drupal/citation_select",
+  "type": "drupal-module",
+  "description": "",
+  "keywords": ["Drupal"],
+  "repositories": {
+    "drupal": {
+        "type": "composer",
+        "url": "https://packages.drupal.org/8"
+    }
+  },
+  "require": {
+    "professional-wiki/edtf": "~2.0",
+    "drupal/token": "^1.9",
+    "seboettg/citeproc-php": "^2.6",
+    "adci/full-name-parser": "^0.2.4"
+  },
+  "minimum-stability": "dev"
+}

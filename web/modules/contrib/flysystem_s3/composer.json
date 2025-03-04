@@ -1,0 +1,25 @@
+{
+  "name": "drupal/flysystem_s3",
+  "description": "Provides an Amazon S3 plugin for Flysystem.",
+  "type": "drupal-module",
+  "license": "GPL-2.0-or-later",
+  "homepage": "https://drupal.org/project/flysystem_s3",
+  "support": {
+    "issues": "https://drupal.org/project/issues/flysystem_s3",
+    "source": "https://git.drupalcode.org/project/flysystem_s3"
+  },
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "https://packages.drupal.org/8"
+    }
+  ],
+  "minimum-stability": "dev",
+  "require": {
+    "aws/aws-sdk-php": "^3.288.1",
+    "drupal/flysystem": "^2.0",
+    "league/flysystem": "^1.0.20",
+    "league/flysystem-aws-s3-v3": "^1.0, !=1.0.12, !=1.0.13",
+    "drupal/core": "^10.3"
+  }
+}

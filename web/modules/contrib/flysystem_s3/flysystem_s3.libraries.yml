@@ -1,0 +1,7 @@
+drupal.s3_cors_upload:
+  js:
+    flysystem_s3.js: {}
+  dependencies:
+    - core/drupal.progress
+    - core/once
+    - file/drupal.file

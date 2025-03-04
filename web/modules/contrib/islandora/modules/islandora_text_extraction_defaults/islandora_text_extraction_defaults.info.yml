@@ -1,0 +1,21 @@
+name: 'Islandora Text Extraction Defaults'
+type: module
+description: 'Default config for the Islandora Text Extraction module.'
+core_version_requirement: ^9 || ^10
+package: Islandora
+dependencies:
+  - drupal:field
+  - drupal:file
+  - drupal:islandora_core_feature
+  - drupal:islandora_text_extraction
+  - drupal:language
+  - drupal:media
+  - drupal:path
+  - drupal:system
+  - drupal:text
+  - drupal:user
+
+# Information added by Drupal.org packaging script on 2025-02-05
+version: '2.13.3'
+project: 'islandora'
+datestamp: 1738777080

@@ -1,0 +1,653 @@
+<?php
+
+/**
+ * @file
+ * Contains islandora.module.
+ *
+ * This file is part of the Islandora Project.
+ *
+ * (c) Islandora Foundation
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * @author Diego Pino Navarro <dpino@metro.org> https://github.com/diegopino
+ */
+
+use Drupal\Component\Plugin\Exception\PluginNotFoundException;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Core\Entity\EntityForm;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Site\Settings;
+use Drupal\Core\Url;
+use Drupal\file\FileInterface;
+use Drupal\islandora\Form\IslandoraSettingsForm;
+use Drupal\media\MediaInterface;
+use Drupal\node\NodeInterface;
+use Drupal\serialization\Normalizer\CacheableNormalizerInterface;
+use Drupal\taxonomy\TermInterface;
+
+/**
+ * Implements hook_help().
+ */
+function islandora_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the islandora module.
+    case 'help.page.islandora':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('Islandora integrates Drupal with a Fedora repository.') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+/**
+ * Implements hook_node_insert().
+ */
+function islandora_node_insert(NodeInterface $node) {
+  $utils = \Drupal::service('islandora.utils');
+
+  // Execute index reactions.
+  $utils->executeNodeReactions('\Drupal\islandora\Plugin\ContextReaction\IndexReaction', $node);
+}
+
+/**
+ * Implements hook_node_update().
+ */
+function islandora_node_update(NodeInterface $node) {
+
+  $utils = \Drupal::service('islandora.utils');
+  if (!$utils->haveFieldsChanged($node, $node->original)) {
+    return;
+  };
+
+  // Execute index reactions.
+  $utils->executeNodeReactions('\Drupal\islandora\Plugin\ContextReaction\IndexReaction', $node);
+}
+
+/**
+ * Implements hook_node_delete().
+ */
+function islandora_node_delete(NodeInterface $node) {
+  $utils = \Drupal::service('islandora.utils');
+
+  // Execute delete reactions.
+  $utils->executeNodeReactions('\Drupal\islandora\Plugin\ContextReaction\DeleteReaction', $node);
+}
+
+/**
+ * Implements hook_media_insert().
+ */
+function islandora_media_insert(MediaInterface $media) {
+  $utils = \Drupal::service('islandora.utils');
+  // Execute index reactions.
+  $utils->executeMediaReactions('\Drupal\islandora\Plugin\ContextReaction\IndexReaction', $media);
+
+  // If it has a parent node...
+  $node = $utils->getParentNode($media);
+  if ($node) {
+    // Fire off derivative reactions for the Media.
+    $utils->executeDerivativeReactions(
+      '\Drupal\islandora\Plugin\ContextReaction\DerivativeReaction',
+      $node,
+      $media
+    );
+  }
+  // Wait until the media insert is complete, then fire file derivatives.
+  drupal_register_shutdown_function('_islandora_fire_media_file_derivative_reaction', $media);
+}
+
+/**
+ * Implements hook_media_update().
+ */
+function islandora_media_update(MediaInterface $media) {
+  $media_source_service = \Drupal::service('islandora.media_source_service');
+
+  // Exit early if nothing's changed.
+  $utils = \Drupal::service('islandora.utils');
+  if (!$utils->haveFieldsChanged($media, $media->original)) {
+    return;
+  };
+
+  // Execute index reactions.
+  $utils->executeMediaReactions('\Drupal\islandora\Plugin\ContextReaction\IndexReaction', $media);
+  // Does it have a source field?
+  $source_field = $media_source_service->getSourceFieldName($media->bundle());
+  if (empty($source_field)) {
+    return;
+  }
+
+  // Exit early if the source file did not change.
+  if ($media->get($source_field)->equals($media->original->get($source_field))) {
+    return;
+  }
+  // If it has a parent node...
+  $node = $utils->getParentNode($media);
+  if ($node) {
+    // Fire off derivative reactions for the Media.
+    $utils->executeDerivativeReactions(
+      '\Drupal\islandora\Plugin\ContextReaction\DerivativeReaction',
+      $node,
+      $media
+    );
+    $utils->executeMediaReactions('\Drupal\islandora\Plugin\ContextReaction\DerivativeFileReaction', $media);
+  }
+}
+
+/**
+ * Implements hook_media_delete().
+ */
+function islandora_media_delete(MediaInterface $media) {
+  $utils = \Drupal::service('islandora.utils');
+
+  // Execute delete reactions.
+  $utils->executeMediaReactions('\Drupal\islandora\Plugin\ContextReaction\DeleteReaction', $media);
+}
+
+/**
+ * Helper to fire media derivative file reactions after a media 'insert'.
+ *
+ * This function should not be called on its own; it exists as a workaround to
+ * being unable to fire media events after a media insert operation. This
+ * behaviour will eventually be replaced by event listeners once these are
+ * implemented in Drupal 9.
+ *
+ * @param \Drupal\Core\Media\MediaInterface $media
+ *   The media that was just inserted.
+ *
+ * @see https://www.drupal.org/project/drupal/issues/2551893
+ */
+function _islandora_fire_media_file_derivative_reaction(MediaInterface $media) {
+  $utils = \Drupal::service('islandora.utils');
+  // Execute derivative file reactions.
+  $utils->executeMediaReactions('\Drupal\islandora\Plugin\ContextReaction\DerivativeFileReaction', $media);
+}
+
+/**
+ * Implements hook_file_insert().
+ */
+function islandora_file_insert(FileInterface $file) {
+  $utils = \Drupal::service('islandora.utils');
+
+  // Execute index reactions.
+  $utils->executeFileReactions('\Drupal\islandora\Plugin\ContextReaction\IndexReaction', $file);
+}
+
+/**
+ * Implements hook_file_update().
+ */
+function islandora_file_update(FileInterface $file) {
+  // Exit early if unchanged.
+  if ($file->hasField('sha1') && $file->original->hasField('sha1')
+    && $file->sha1->getString() == $file->original->sha1->getString()) {
+    return;
+  }
+
+  $utils = \Drupal::service('islandora.utils');
+
+  // Execute index reactions.
+  $utils->executeFileReactions('\Drupal\islandora\Plugin\ContextReaction\IndexReaction', $file);
+
+  // Execute derivative reactions.
+  foreach ($utils->getReferencingMedia($file->id()) as $media) {
+    $node = $utils->getParentNode($media);
+    if ($node) {
+      $utils->executeDerivativeReactions(
+        '\Drupal\islandora\Plugin\ContextReaction\DerivativeReaction',
+        $node,
+        $media
+      );
+    }
+  }
+}
+
+/**
+ * Implements hook_file_delete().
+ */
+function islandora_file_delete(FileInterface $file) {
+  $utils = \Drupal::service('islandora.utils');
+
+  // Execute delete reactions.
+  $utils->executeFileReactions('\Drupal\islandora\Plugin\ContextReaction\DeleteReaction', $file);
+}
+
+/**
+ * Implements hook_taxonomy_term_insert().
+ */
+function islandora_taxonomy_term_insert(TermInterface $term) {
+  $utils = \Drupal::service('islandora.utils');
+
+  // Execute index reactions.
+  $utils->executeTermReactions('\Drupal\islandora\Plugin\ContextReaction\IndexReaction', $term);
+}
+
+/**
+ * Implements hook_taxonomy_term_update().
+ */
+function islandora_taxonomy_term_update(TermInterface $term) {
+  $utils = \Drupal::service('islandora.utils');
+
+  // Execute index reactions.
+  $utils->executeTermReactions('\Drupal\islandora\Plugin\ContextReaction\IndexReaction', $term);
+}
+
+/**
+ * Implements hook_taxonomy_term_delete().
+ */
+function islandora_taxonomy_term_delete(TermInterface $term) {
+  $utils = \Drupal::service('islandora.utils');
+
+  // Execute delete reactions.
+  $utils->executeTermReactions('\Drupal\islandora\Plugin\ContextReaction\DeleteReaction', $term);
+}
+
+/**
+ * Implements hook_jsonld_alter_normalized_array().
+ */
+function islandora_jsonld_alter_normalized_array(EntityInterface $entity, array &$normalized, array $context) {
+  $context_manager = \Drupal::service('context.manager');
+  foreach ($context_manager->getActiveReactions('\Drupal\islandora\ContextReaction\NormalizerAlterReaction') as $reaction) {
+    $reaction->execute($entity, $normalized, $context);
+    foreach ($context_manager->getActiveContexts() as $context_config) {
+      try {
+        if ($context_config->getReaction($reaction->getPluginId()) && isset($context[CacheableNormalizerInterface::SERIALIZATION_CONTEXT_CACHEABILITY])) {
+          $context[CacheableNormalizerInterface::SERIALIZATION_CONTEXT_CACHEABILITY]->addCacheableDependency($context_config);
+        };
+      }
+      catch (PluginNotFoundException $e) {
+        // Squash :(.
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_view_mode_alter().
+ */
+function islandora_entity_view_mode_alter(&$view_mode, EntityInterface $entity) {
+  // Change the view mode based on user input from a 'view_mode_alter'
+  // ContextReaction.
+  $entity_type = $entity->getEntityType()->id();
+  $storage = \Drupal::service('entity_type.manager')->getStorage('entity_view_mode');
+  $context_manager = \Drupal::service('context.manager');
+  $current_entity = \Drupal::routeMatch()->getParameter($entity_type);
+  $current_id = ($current_entity instanceof NodeInterface || $current_entity instanceof MediaInterface) ? $current_entity->id() : NULL;
+  if (isset($current_id) && $current_id == $entity->id()) {
+    foreach ($context_manager->getActiveReactions('\Drupal\islandora\Plugin\ContextReaction\ViewModeAlterReaction') as $reaction) {
+      // Construct the new view mode's machine name.
+      $entity_type = $entity->getEntityTypeId();
+      $mode = $reaction->execute();
+      $machine_name = "$entity_type.$mode";
+
+      // Try to load it.
+      $new_mode = $storage->load($machine_name);
+
+      // If successful, alter the view mode.
+      if ($new_mode) {
+        $view_mode = $mode;
+      }
+      else {
+        // Otherwise, leave it be, but log a message.
+        \Drupal::logger('islandora')
+          ->info("EntityViewMode $machine_name does not exist.  View mode cannot be altered.");
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_node().
+ */
+function islandora_preprocess_node(&$variables) {
+  // Using alternate view modes causes on a node's canoncial page
+  // causes the title to get printed out twice.  Once from the
+  // fields themselves and again as a block above the main content.
+  // Setting 'page' to TRUE gets rid of the title in the fields and
+  // leaves the block.  This makes it look uniform with the 'default'
+  // view mode.
+  if (node_is_page($variables['elements']['#node'])) {
+    $variables['page'] = TRUE;
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function islandora_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  $media_add_forms = ['media_audio_add_form', 'media_document_add_form',
+    'media_extracted_text_add_form', 'media_file_add_form', 'media_image_add_form',
+    'media_fits_technical_metadata_add_form', 'media_video_add_form',
+  ];
+
+  if (in_array($form['#form_id'], $media_add_forms)) {
+    $params = \Drupal::request()->query->all();
+    if (isset($params['edit'])) {
+      $media_of_nid = $params['edit']['field_media_of']['widget'][0]['target_id'];
+      $node = \Drupal::entityTypeManager()->getStorage('node')->load($media_of_nid);
+      if ($node) {
+        $form['name']['widget'][0]['value']['#default_value'] = $node->getTitle();
+      }
+      $form['actions']['submit']['#submit'][] = 'islandora_media_custom_form_submit';
+    }
+  }
+
+  $form_object = $form_state->getFormObject();
+  $utils = \Drupal::service('islandora.utils');
+  $config = \Drupal::config('islandora.settings')->get('delete_media_and_files');
+
+  if ($config == 1 && $form_object instanceof EntityForm) {
+    $entity = $form_object->getEntity();
+
+    if ($entity->getEntityTypeId() == "node" && $utils->isIslandoraType($entity->getEntityTypeId(), $entity->bundle()) && strpos($form['#form_id'], 'delete_form') !== FALSE) {
+      $medias = $utils->getMedia($form_state->getFormObject()->getEntity());
+      if (count($medias) != 0) {
+        $form['delete_associated_content'] = [
+          '#type' => 'checkbox',
+          '#title' => t('Delete all associated medias and nodes'),
+        ];
+
+        $media_list = [];
+
+        foreach ($medias as $media) {
+          $media_list[] = $media->getName();
+        }
+
+        $form['container'] = [
+          '#type' => 'container',
+          '#states' => [
+            'visible' => [
+              ':input[name="delete_associated_content"]' => ['checked' => TRUE],
+            ],
+          ],
+        ];
+
+        $form['container']['media_items'] = [
+          '#theme' => 'item_list',
+          '#type' => 'ul',
+          '#items' => $media_list,
+          '#attributes' => ['class' => ['islandora-media-items']],
+          '#wrapper_attributes' => ['class' => ['container']],
+          '#attached' => [
+            'library' => [
+              'islandora/islandora',
+            ],
+          ],
+        ];
+
+        $form['actions']['submit']['#submit'][] = 'islandora_object_delete_form_submit';
+        return $form;
+      }
+    }
+  }
+
+  return $form;
+}
+
+/**
+ * Redirect submit handler for media save.
+ */
+function islandora_media_custom_form_submit(&$form, FormStateInterface $form_state) {
+  // Check configuration to see whether a redirect is desired.
+  $redirect = \Drupal::config('islandora.settings')->get('redirect_after_media_save');
+  if ($redirect) {
+    $params = \Drupal::request()->query->all();
+    if (!empty($params)) {
+      $target_id = $params['edit']['field_media_of']['widget'][0]['target_id'];
+      $url = Url::fromRoute('view.media_of.page_1', ['node' => $target_id]);
+      $form_state->setRedirectUrl($url);
+    }
+  }
+}
+
+/**
+ * Implements a submit handler for the delete form.
+ */
+function islandora_object_delete_form_submit($form, FormStateInterface $form_state) {
+  $result = $form_state->getValues('delete_associated_content');
+  if ($result['delete_associated_content'] == 1) {
+    $utils = \Drupal::service('islandora.utils');
+    $node = $form_state->getFormObject()->getEntity();
+    $medias = $utils->getMedia($node);
+    $results = $utils->deleteMediaAndFiles($medias);
+    $logger = \Drupal::logger('logger.channel.islandora');
+    $messenger = \Drupal::messenger();
+    if (isset($results['inaccessible'])) {
+      $messenger->addWarning($results['inaccessible']);
+    }
+    $logger->notice($results['deleted']);
+    $build = [
+      'heading' => [
+        '#type' => 'html_tag',
+        '#tag' => 'div',
+        '#value' => t("The repository item @node and @media", [
+          '@node' => $node->getTitle(),
+          '@media' => $results['deleted'],
+        ]),
+      ],
+    ];
+
+    $message = \Drupal::service('renderer')->renderPlain($build);
+    $messenger->deleteByType('status');
+    $messenger->addStatus($message);
+  }
+}
+
+/**
+ * Implements hook_field_widget_single_element_WIDGET_TYPE_form_alter().
+ */
+function islandora_field_widget_single_element_image_image_form_alter(&$element, $form_state, $context) {
+  $element['#process'][] = 'islandora_add_default_image_alt_text';
+}
+
+/**
+ * Callback for hook_field_widget_single_element_WIDGET_TYPE_form_alter().
+ */
+function islandora_add_default_image_alt_text($element, $form_state, $form) {
+  if ($element['alt']['#access']) {
+    $params = \Drupal::request()->query->all();
+    if (isset($params['edit'])) {
+      $media_of_nid = $params['edit']['field_media_of']['widget'][0]['target_id'];
+      $node = \Drupal::entityTypeManager()->getStorage('node')->load($media_of_nid);
+      if ($node) {
+        $element['alt']['#default_value'] = $node->getTitle();
+      }
+    }
+  }
+  return $element;
+}
+
+/**
+ * Implements hook_entity_form_display_alter().
+ */
+function islandora_entity_form_display_alter(&$form_display, $context) {
+  // Change the form display based on user input from a 'form_display_alter'
+  // ContextReaction.
+  $storage = \Drupal::service('entity_type.manager')->getStorage('entity_form_display');
+  $context_manager = \Drupal::service('context.manager');
+
+  // Alter form display based on context.
+  foreach ($context_manager->getActiveReactions('\Drupal\islandora\Plugin\ContextReaction\FormDisplayAlterReaction') as $reaction) {
+    // Construct the new form display's machine name.
+    $entity_type = $context['entity_type'];
+    $bundle = $context['bundle'];
+    $mode = $reaction->execute();
+    $machine_name = "$entity_type.$bundle.$mode";
+
+    // Try to load it.
+    $new_display = $storage->load($machine_name);
+
+    // If successful, alter the form display.
+    if ($new_display) {
+      $form_display = $new_display;
+    }
+    else {
+      // Otherwise, leave it be, but log a message.
+      \Drupal::logger('islandora')->info("EntityFormDisplay $machine_name does not exist.  Form display cannot be altered.");
+    }
+  }
+}
+
+/**
+ * Implements hook_form_form_id_alter().
+ */
+function islandora_form_block_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  // Unset our custom conditions.  There's too many to use well within
+  // the core block placement UI, and no other reasonable way to filter
+  // them out.  See https://www.drupal.org/node/2284687.  Use
+  // /admin/structure/context instead if you want to use these conditions
+  // to alter block layout.
+  unset($form['visibility']['content_entity_type']);
+  unset($form['visibility']['file_uses_filesystem']);
+  unset($form['visibility']['media_has_mimetype']);
+  unset($form['visibility']['media_has_term']);
+  unset($form['visibility']['media_is_islandora_media']);
+  unset($form['visibility']['media_uses_filesystem']);
+  unset($form['visibility']['node_had_namespace']);
+  unset($form['visibility']['node_has_ancestor']);
+  unset($form['visibility']['node_has_parent']);
+  unset($form['visibility']['node_has_term']);
+  unset($form['visibility']['node_is_islandora_object']);
+  unset($form['visibility']['node_referenced_by_node']);
+  unset($form['visibility']['parent_node_has_term']);
+}
+
+/**
+ * Implements hook_entity_extra_field_info().
+ */
+function islandora_entity_extra_field_info() {
+  $config_factory = \Drupal::service('config.factory')->get(IslandoraSettingsForm::CONFIG_NAME);
+  $extra_field = [];
+
+  $pseudo_bundles = $config_factory->get(IslandoraSettingsForm::GEMINI_PSEUDO);
+
+  if (!empty($pseudo_bundles)) {
+    foreach ($pseudo_bundles as $key) {
+      [$bundle, $content_entity] = explode(":", $key);
+      $extra_field[$content_entity][$bundle]['display'][IslandoraSettingsForm::GEMINI_PSEUDO_FIELD] = [
+        'label' => t('Fedora URI'),
+        'description' => t('The URI to the persistent'),
+        'weight' => 100,
+        'visible' => TRUE,
+      ];
+    }
+  }
+  return $extra_field;
+}
+
+/**
+ * Implements hook_entity_view().
+ */
+function islandora_entity_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
+  $route_match_item = \Drupal::routeMatch()->getParameters()->get($entity->getEntityTypeId());
+  // Ensure the entity matches the route.
+  if ($entity === $route_match_item) {
+    $flysystem_config = Settings::get('flysystem');
+    $fedora_root = $flysystem_config['fedora']['config']['root'] ?? NULL;
+    if ($display->getComponent('field_gemini_uri') && $fedora_root) {
+      $fedora_root = rtrim($fedora_root, '/');
+      $mapper = \Drupal::service('islandora.entity_mapper');
+      if ($entity->getEntityTypeId() == 'media') {
+        // Check if the source file is in Fedora or not.
+        $media_source_service = \Drupal::service('islandora.media_source_service');
+        $source_file = $media_source_service->getSourceFile($entity);
+        if (!$source_file) {
+          \Drupal::logger('islandora')->error(
+            \Drupal::service('string_translation')->translate(
+              "Can't get source file for @label (@id)", [
+                '@label' => $entity->label(),
+                "@id" => $entity->id(),
+              ]
+            )
+          );
+          return;
+        }
+        $uri = $source_file->getFileUri();
+        $scheme = \Drupal::service('stream_wrapper_manager')->getScheme($uri);
+        $flysystem_config = Settings::get('flysystem');
+
+        // Use the file's path if it's in fedora.
+        // Otherwise do the UUID -> pair tree thang.
+        if (isset($flysystem_config[$scheme]) && $flysystem_config[$scheme]['driver'] == 'fedora') {
+          $parts = parse_url($uri);
+          $path = $parts['host'] . $parts['path'];
+        }
+        else {
+          $path = $mapper->getFedoraPath($source_file->uuid());
+        }
+        $path = trim($path, '/');
+        $fedora_uri = "$fedora_root/$path/fcr:metadata";
+      }
+      else {
+        // All non-media entities do the UUID -> pair tree thang.
+        $path = $mapper->getFedoraPath($entity->uuid());
+        $path = trim($path, '/');
+        $fedora_uri = "$fedora_root/$path";
+      }
+
+      // Stuff the fedora url into the pseudo field.
+      $build['field_gemini_uri'] = [
+        '#type' => 'container',
+        '#attributes' => [
+          'id' => 'field-gemini-uri',
+        ],
+        'internal_label' => [
+          '#type' => 'item',
+          '#title' => t('Fedora URI'),
+          'internal_uri' => [
+            '#type' => 'link',
+            '#title' => t("@url", ['@url' => $fedora_uri]),
+            '#url' => Url::fromUri($fedora_uri),
+          ],
+        ],
+      ];
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_views_view_table().
+ *
+ * Used for the integer-weight drag-n-drop. Taken almost
+ * verbatim from the weight module.
+ */
+function islandora_preprocess_views_view_table(&$variables) {
+
+  // Check for a weight selector field.
+  foreach ($variables['view']->field as $field_key => $field) {
+    if ($field->getPluginId() == 'integer_weight_selector') {
+
+      // Check if the weight selector is on the first column.
+      $is_first_column = array_search($field_key, array_keys($variables['view']->field)) > 0 ? FALSE : TRUE;
+
+      // Add the tabledrag attributes.
+      foreach ($variables['rows'] as $key => $row) {
+        if ($is_first_column) {
+          // If the weight selector is the first column move it to the last
+          // column, in order to make the draggable widget appear.
+          $weight_selector = $variables['rows'][$key]['columns'][$field->field];
+          unset($variables['rows'][$key]['columns'][$field->field]);
+          $variables['rows'][$key]['columns'][$field->field] = $weight_selector;
+        }
+        // Add draggable attribute.
+        $variables['rows'][$key]['attributes']->addClass('draggable');
+      }
+      // The row key identify in an unique way a view grouped by a field.
+      // Without row number, all the groups will share the same table_id
+      // and just the first table can be draggable.
+      $table_id = 'weight-table-' . $variables['view']->dom_id . '-row-' . $key;
+      $variables['attributes']['id'] = $table_id;
+
+      $options = [
+        'table_id' => $table_id,
+        'action' => 'order',
+        'relationship' => 'sibling',
+        'group' => 'weight-selector',
+      ];
+      drupal_attach_tabledrag($variables, $options);
+    }
+  }
+}

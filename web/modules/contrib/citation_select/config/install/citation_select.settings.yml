@@ -1,0 +1,11 @@
+csl_map:
+  title:
+    - title
+  'current url':
+    - URL
+typed_relation_map:
+  relators:aut: author
+  relators:ctb: contributor
+  relators:edt: editor
+  relators:pbl: publisher
+default_style: apa

@@ -1,0 +1,11 @@
+mystic_behaviors:
+  js:
+    js/islandora_install_profile_demo_core.js: {}
+  css:
+    theme:
+      css/islandora_install_profile_demo_core.css: { }
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupal.ajax
+    - core/views.ajax

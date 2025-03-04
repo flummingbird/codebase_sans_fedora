@@ -1,0 +1,239 @@
+<?php
+
+/**
+ * @file
+ * Install/update hook implementations.
+ */
+
+use Drupal\Core\Extension\ExtensionNameLengthException;
+use Drupal\Core\Extension\MissingDependencyException;
+use Drupal\Core\Utility\UpdateException;
+use Symfony\Component\Yaml\Yaml;
+
+/**
+ * Adds common namespaces to jsonld.settings.
+ */
+function islandora_install() {
+  update_jsonld_included_namespaces();
+}
+
+/**
+ * Delete the 'delete_media' action we used to provide, if it exists.
+ *
+ * Use the core 'media_delete_action' instead.
+ */
+function islandora_update_8001(&$sandbox) {
+  $action = \Drupal::service('entity_type.manager')->getStorage('action')->load('delete_media');
+  if ($action) {
+    $action->delete();
+  }
+}
+
+/**
+ * Replaces 'entity_bundle' conditions with 'islandora_entity_bundle'.
+ *
+ * This prevents plugin naming collisions between islandora and ctools.
+ */
+function islandora_update_8002(&$sandbox) {
+
+  // Find contexts that have the old 'entity_bundle' condition.
+  $results = \Drupal::entityQuery('context')->condition('conditions.entity_bundle.id', 'entity_bundle')->execute();
+
+  if (empty($results)) {
+    return;
+  }
+
+  // Set each context config to use 'islandora_entity_bundle' instead.
+  foreach ($results as $result) {
+    $config = \Drupal::configFactory()->getEditable("context.context.$result");
+    $condition = $config->get('conditions.entity_bundle');
+    $condition['id'] = 'islandora_entity_bundle';
+    $config->set('conditions.islandora_entity_bundle', $condition);
+    $config->clear('conditions.entity_bundle');
+    $config->save();
+  }
+
+  // Force drupal to reload the config.
+  \Drupal::service('plugin.manager.condition')->clearCachedDefinitions();
+}
+
+/**
+ * Deletes the islandora_version_count table.
+ *
+ * We never implemented the functionality.
+ */
+function islandora_update_8003(&$sandbox) {
+  \Drupal::service('database')
+    ->schema()
+    ->dropTable('islandora_version_count');
+}
+
+/**
+ * Renames migration source keys -> ids.
+ */
+function islandora_update_8004() {
+  $config_factory = \Drupal::configFactory();
+  $config = $config_factory->getEditable('migrate_plus.migration.islandora__tags');
+  if ($config) {
+    if (!$config->get('source.ids')) {
+      $config->set('source.ids', $config->get('source.keys'));
+      $config->clear('source.keys');
+      $config->save(TRUE);
+    }
+  }
+}
+
+/**
+ * Makes migrate_tags an array.
+ */
+function islandora_update_8005() {
+  $config_factory = \Drupal::configFactory();
+  $config_factory->getEditable('migrate_plus.migration.islandora__tags')->delete();
+  $config = $config_factory->getEditable('migrate_plus.migration.islandora_tags');
+  if ($config) {
+    if (!is_array($config->get('migration_tags'))) {
+      $config->set('migration_tags', [$config->get('migration_tags')]);
+      $config->save(TRUE);
+    }
+    if (!$config->get('source.ids')) {
+      $config->set('source.ids', $config->get('source.keys'));
+      $config->clear('source.keys');
+      $config->save(TRUE);
+    }
+  }
+}
+
+/**
+ * Adds adds previously hardcoded namespaces to configuration.
+ */
+function islandora_update_8006() {
+  update_jsonld_included_namespaces();
+}
+
+/**
+ * Used by install and update_8006 to add namespaces to jsonld.settings.yml.
+ */
+function update_jsonld_included_namespaces() {
+  $namespaces = [
+    [
+      'prefix' => 'ldp',
+      'namespace' => 'http://www.w3.org/ns/ldp#',
+    ], [
+      'prefix' => 'dc11',
+      'namespace' => 'http://purl.org/dc/elements/1.1/',
+    ], [
+      'prefix' => 'dcterms',
+      'namespace' => 'http://purl.org/dc/terms/',
+    ], [
+      'prefix' => 'nfo',
+      'namespace' => 'http://www.semanticdesktop.org/ontologies/2007/03/22/nfo/v1.1/',
+    ], [
+      'prefix' => 'ebucore',
+      'namespace' => 'http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#',
+    ], [
+      'prefix' => 'fedora',
+      'namespace' => 'http://fedora.info/definitions/v4/repository#',
+    ], [
+      'prefix' => 'owl',
+      'namespace' => 'http://www.w3.org/2002/07/owl#',
+    ], [
+      'prefix' => 'ore',
+      'namespace' => 'http://www.openarchives.org/ore/terms/',
+    ], [
+      'prefix' => 'rdf',
+      'namespace' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+    ], [
+      'prefix' => 'rdau',
+      'namespace' => 'http://rdaregistry.info/Elements/u/',
+    ], [
+      'prefix' => 'islandora',
+      'namespace' => 'http://islandora.ca/',
+    ], [
+      'prefix' => 'pcdm',
+      'namespace' => 'http://pcdm.org/models#',
+    ], [
+      'prefix' => 'use',
+      'namespace' => 'http://pcdm.org/use#',
+    ], [
+      'prefix' => 'iana',
+      'namespace' => 'http://www.iana.org/assignments/relation/',
+    ], [
+      'prefix' => 'premis',
+      'namespace' => 'http://www.loc.gov/premis/rdf/v1#',
+    ], [
+      'prefix' => 'premis3',
+      'namespace' => 'http://www.loc.gov/premis/rdf/v3/',
+    ], [
+      'prefix' => 'co',
+      'namespace' => 'http://purl.org/co/',
+    ],
+  ];
+
+  $config = \Drupal::configFactory()->getEditable('jsonld.settings');
+  if ($config && !is_array($config->get('rdf_namespaces'))) {
+    $config->set('rdf_namespaces', $namespaces);
+    $config->save(TRUE);
+  }
+  else {
+    \Drupal::logger('islandora')
+      ->warning("Could not find required jsonld.settings to add default RDF namespaces.");
+  }
+}
+
+/**
+ * Ensure that ctools is enabled.
+ */
+function islandora_update_8007() {
+  $module_handler = \Drupal::moduleHandler();
+  if ($module_handler->moduleExists('ctools')) {
+    return t('The "@module_name" module is already enabled, no action necessary.', [
+      '@module_name' => 'ctools',
+    ]);
+  }
+
+  /** @var \Drupal\Core\Extension\ModuleInstallerInterface $installer */
+  $installer = \Drupal::service('module_installer');
+
+  try {
+    if ($installer->install(['ctools'], TRUE)) {
+      return t('The "@module_name" module was enabled successfully.', [
+        '@module_name' => 'ctools',
+      ]);
+    }
+  }
+  catch (ExtensionNameLengthException | MissingDependencyException $e) {
+    throw new UpdateException('Failed; ensure that the ctools module is available in the Drupal installation.', 0, $e);
+  }
+  catch (\Exception $e) {
+    throw new UpdateException('Failed; encountered an exception while trying to enable ctools.', 0, $e);
+  }
+
+  // Theoretically impossible to hit, as ModuleInstaller::install() only returns
+  // TRUE (or throws/propagates an exception), but... probably a good idea to
+  // have the here, just in case?
+  throw new UpdateException('Failed; hit the end of the update hook implementation, which is not expected.');
+}
+
+/**
+ * Set config to no redirect after media save.
+ */
+function islandora_update_8008() {
+  $config = \Drupal::configFactory()->getEditable('islandora.settings');
+  if ($config) {
+    $config->set('redirect_after_media_save', FALSE);
+    $config->save(TRUE);
+    return t('A new configuration option, "Redirect after media save" is now available.
+    It has been turned off to preserve existing behaviour. To enable this setting visit
+    Configuration > Islandora > Core Settings.');
+  }
+}
+
+/**
+ * Add "Delete node and media" action.
+ */
+function islandora_update_9001(&$sandbox) {
+  $config_id = 'system.action.delete_node_and_media';
+  $config_path = \Drupal::service('extension.list.module')->getPath('islandora') . '/config/install/' . $config_id . '.yml';
+  $data = Yaml::parseFile($config_path);
+  \Drupal::configFactory()->getEditable($config_id)->setData($data)->save(TRUE);
+}

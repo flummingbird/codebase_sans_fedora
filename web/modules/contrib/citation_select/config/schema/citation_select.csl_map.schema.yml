@@ -1,0 +1,21 @@
+citation_select.csl_map:
+  type: config_object
+  label: 'Settings for mapping citation select module'
+  mapping:
+    csl_map:
+      type: sequence
+      label: 'CSL field mapping'
+      sequence:
+        type: sequence
+        sequence:
+          type: string
+    typed_relation_map:
+      type: sequence
+      label: 'Typed relation map'
+      sequence:
+        type: string
+    reference_type_field_map:
+      type: sequence
+      label: 'Reference type value map'
+      sequence:
+        type: string

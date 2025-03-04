@@ -1,0 +1,108 @@
+filehash.settings:
+  type: config_object
+  label: 'File Hash settings'
+  mapping:
+    algorithms:
+      type: mapping
+      label: 'Enabled hash algorithms'
+      mapping:
+        blake2b_128:
+          type: boolean
+          label: 'BLAKE2b-128'
+        blake2b_160:
+          type: boolean
+          label: 'BLAKE2b-160'
+        blake2b_224:
+          type: boolean
+          label: 'BLAKE2b-224'
+        blake2b_256:
+          type: boolean
+          label: 'BLAKE2b-256'
+        blake2b_384:
+          type: boolean
+          label: 'BLAKE2b-384'
+        blake2b_512:
+          type: boolean
+          label: 'BLAKE2b-512'
+        md5:
+          type: boolean
+          label: 'MD5'
+        sha1:
+          type: boolean
+          label: 'SHA-1'
+        sha224:
+          type: boolean
+          label: 'SHA-224'
+        sha256:
+          type: boolean
+          label: 'SHA-256'
+        sha384:
+          type: boolean
+          label: 'SHA-384'
+        sha512_224:
+          type: boolean
+          label: 'SHA-512/224'
+        sha512_256:
+          type: boolean
+          label: 'SHA-512/256'
+        sha512:
+          type: boolean
+          label: 'SHA-512'
+        sha3_224:
+          type: boolean
+          label: 'SHA3-224'
+        sha3_256:
+          type: boolean
+          label: 'SHA3-256'
+        sha3_384:
+          type: boolean
+          label: 'SHA3-384'
+        sha3_512:
+          type: boolean
+          label: 'SHA3-512'
+    dedupe:
+      type: integer
+      label: 'Disallow duplicate files'
+    rehash:
+      type: boolean
+      label: 'Always rehash file when saving'
+    original:
+      type: boolean
+      label: 'Store an additional original hash for each uploaded file'
+    dedupe_original:
+      type: boolean
+      label: 'Include original file hashes in duplicate check'
+    mime_types:
+      type: sequence
+      label: 'List of MIME types to hash'
+      sequence:
+        type: string
+        label: 'MIME type'
+    autohash:
+      type: boolean
+      label: 'Automatically generate missing hashes when loading files'
+    suppress_warnings:
+      type: boolean
+      label: 'Suppress warnings for nonexistent or unreadable files'
+
+field.formatter.settings.filehash_table:
+  type: mapping
+  label: 'File Hash table field display format settings'
+  mapping:
+    algo:
+      type: string
+      label: 'Hash algorithm'
+    use_description_as_link_text:
+      type: boolean
+      label: 'Replace the file name by its description when available'
+
+field.field.*.*.*.third_party.filehash:
+  type: mapping
+  label: 'File Hash settings'
+  mapping:
+    dedupe:
+      type: integer
+      label: 'Disallow duplicate files'
+    dedupe_original:
+      type: boolean
+      label: 'Include original file hashes in duplicate check'

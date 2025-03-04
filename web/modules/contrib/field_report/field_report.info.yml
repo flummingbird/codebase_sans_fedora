@@ -1,0 +1,11 @@
+name: Field Report
+type: module
+description: Generates a report page that organizes fields by content/entity type.
+core_version_requirement: ^8.8 || ^9 || ^10
+dependencies:
+  - drupal:field_ui
+
+# Information added by Drupal.org packaging script on 2022-08-10
+version: '8.x-2.1'
+project: 'field_report'
+datestamp: 1660160588

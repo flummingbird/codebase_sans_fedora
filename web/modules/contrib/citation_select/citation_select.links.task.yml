@@ -1,0 +1,19 @@
+citation_select.settings:
+  route_name: citation_select.settings
+  title: 'Citation Select Settings'
+  base_route: citation_select.settings
+
+citation_select.settings.config:
+  route_name: citation_select.settings
+  title: 'Config'
+  parent_id: citation_select.settings
+
+citation_select.settings.styles:
+  route_name: entity.citation_select_csl_style.collection
+  title: 'CSL styles'
+  parent_id: citation_select.settings
+
+citation_select.settings.csl_map:
+  route_name: citation_select.csl_map
+  title: 'Citation Select CSL Mapping'
+  parent_id: citation_select.settings

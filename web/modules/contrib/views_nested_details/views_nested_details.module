@@ -1,0 +1,96 @@
+<?php
+
+/**
+ * @file
+ * Contains views_nested_details.module.
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Template\Attribute;
+use Drupal\islandora\IslandoraUtils;
+
+/**
+ * Implements hook_help().
+ */
+function views_nested_details_help($route_name, RouteMatchInterface $route_match) {
+    switch ($route_name) {
+        // Main module help for the views_nested_details module.
+        case 'help.page.views_nested_details':
+            $output = '';
+            $output .= '<h3>' . t('About') . '</h3>';
+            $output .= '<p>' . t('views_nested_details View') . '</p>';
+            return $output;
+
+        default:
+    }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function views_nested_details_theme() {
+  return [
+    'views_nested_details' => [
+      'render element' => 'children',
+    ],
+    // Views GROUP templates.
+    'views_view_nested_details_section_grouping' => [
+      'variables' => ['view' => NULL, 'grouping' => NULL, 'grouping_level' => NULL, 'rows' => NULL, 'title' => NULL],
+    ],
+    'views_view_nested_details' => array(
+      'variables' => array('view' => NULL, 'rows' => NULL),
+    ),
+  ];
+}
+
+
+/**
+ * Prepares variables for views single grouping templates.
+ *
+ * Default template: views-view-grouping.html.twig.
+ *
+ * @param array $variables
+ *   An associative array containing:
+ *   - view: The view object.
+ *   - rows: The rows returned from the view.
+ *   - grouping_level: Integer indicating the hierarchical level of the
+ *     grouping.
+ *   - content: The content to be grouped.
+ *   - title: The group heading.
+ */
+function template_preprocess_views_view_nested_details_section_grouping(&$variables) {
+  $variables['content'] = $variables['view']->style_plugin->renderGroupingSets($variables['rows'], $variables['grouping_level']);
+  $variables['#attached'] = [
+    'library' => [
+      'views_nested_details/mystic_behaviors'
+    ],
+  ];
+}
+
+/**
+ * Implements hook_preprocess_HOOK() for theme_views_view_details().
+ */
+function template_preprocess_views_view_nested_details(&$variables) {
+  $view = $variables['view'];
+  $rows = $variables['rows'];
+  $style = $view->style_plugin;
+  $options = $style->options;
+
+  $variables['default_row_class'] = !empty($options['default_row_class']);
+  foreach ($rows as $id => $row) {
+    $variables['rows'][$id] = [];
+    $variables['rows'][$id]['content'] = $row;
+    $variables['rows'][$id]['attributes'] = new Attribute();
+    if ($row_class = $view->style_plugin->getRowClass($id)) {
+      $variables['rows'][$id]['attributes']->addClass($row_class);
+    }
+  }
+  $variables['row_content']  = [
+    '#theme' => 'item_list',
+    '#list_type' => 'ul',
+    '#title' => 'My List',
+    '#items' => $rows,
+    '#attributes' => ['class' => 'myclass'],
+    '#wrapper_attributes' => ['class' => 'my_list_container'],
+  ];
+}

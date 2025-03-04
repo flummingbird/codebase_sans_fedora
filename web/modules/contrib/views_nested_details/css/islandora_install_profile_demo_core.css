@@ -1,0 +1,24 @@
+
+
+.views-col {
+  cursor: pointer;
+}
+
+.ajax-process {
+  display: none;
+}
+
+
+.accordion--periodicals {
+margin-bottom: 5px;
+}
+
+.accordion--periodicals details summary {
+  background-color: #D3D3D3;
+  padding: 18px;
+}
+
+
+.accordion--periodicals .views-view-newspaper-group summary {
+  background-color: #F5F5F5;
+}

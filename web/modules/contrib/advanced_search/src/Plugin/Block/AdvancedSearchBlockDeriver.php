@@ -1,0 +1,17 @@
+<?php
+
+namespace Drupal\advanced_search\Plugin\Block;
+
+/**
+ * Deriver for AdvancedSearchBlock.
+ */
+class AdvancedSearchBlockDeriver extends SearchApiDisplayBlockDeriver {
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function label() {
+    return $this->t('Advanced Search');
+  }
+
+}

@@ -1,0 +1,7 @@
+name: 'Islandora Fits'
+type: module
+description: 'Enables Technical Metadata derivative generation'
+core_version_requirement: ^9 || ^10
+package: 'Islandora'
+dependencies:
+  - islandora:islandora

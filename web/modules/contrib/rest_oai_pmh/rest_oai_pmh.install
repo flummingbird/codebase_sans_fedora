@@ -1,0 +1,315 @@
+<?php
+
+/**
+ * @file
+ * Contains rest_oai_pmh.install.
+ */
+
+use Drupal\Core\Database\Database;
+
+/**
+ * Implements hook_schema().
+ */
+function rest_oai_pmh_schema() {
+  $schema = [];
+
+  $schema['rest_oai_pmh_record'] = [
+    'description' => 'Stores the items that will be exposed to OAI-PMH.',
+    'fields' => [
+      'entity_type' => [
+        'description' => 'The entity id of the record',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ],
+      'entity_id' => [
+        'description' => 'The entity type of the record',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'created' => [
+        'description' => 'A timestamp indicating when the record was created',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'changed' => [
+        'description' => 'A timestamp indicating when the record was last changed',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+    ],
+    'primary key' => ['entity_type', 'entity_id'],
+    'indexes' => [
+      'entity_type' => ['entity_type'],
+      'created_ts' => ['created'],
+      'changed_ts' => ['changed'],
+    ],
+  ];
+
+  $schema['rest_oai_pmh_set'] = [
+    'description' => 'Stores the sets that will be exposed to OAI-PMH.',
+    'fields' => [
+      'set_id' => [
+        'description' => 'The setSpec of the set',
+        'type' => 'varchar',
+        // We could have a View ID (32 char) + ':' + Display ID (32 char)
+        'length' => 65,
+        'not null' => TRUE,
+      ],
+      'entity_type' => [
+        'description' => 'The entity type of the set',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ],
+      'label' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ],
+      'description' => [
+        'type' => 'varchar',
+        'length' => 255,
+      ],
+      'pager_limit' => [
+        'description' => 'The pager/limit value for the set as defined by Views',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 10,
+      ],
+      'view_display' => [
+        'description' => 'The View Display this set was exposed from',
+        'type' => 'varchar',
+        'length' => 255,
+      ],
+    ],
+    'primary key' => ['set_id'],
+    'indexes' => [
+      'entity_type' => ['entity_type'],
+    ],
+  ];
+
+  $schema['rest_oai_pmh_member'] = [
+    'description' => 'Stores which set(s) each record is a member of.',
+    'fields' => [
+      'entity_type' => [
+        'description' => 'The entity type of the record',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ],
+      'entity_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'set_id' => [
+        'type' => 'varchar',
+        // We could have a View ID (32 char) + ':' + Display ID (32 char)
+        'length' => 65,
+        'not null' => TRUE,
+      ],
+    ],
+    'primary key' => ['entity_type', 'entity_id', 'set_id'],
+    'indexes' => [
+      'entity_type' => ['entity_type'],
+      'entity_target' => ['entity_type', 'entity_id'],
+      'set_id' => ['set_id'],
+    ],
+  ];
+
+  return $schema;
+}
+
+/**
+ * Add the necessary tables to store OAI-PMH data.
+ */
+function rest_oai_pmh_update_8001() {
+  $schema = Database::getConnection()->schema();
+  $tables = rest_oai_pmh_schema();
+  foreach ($tables as $name => $table) {
+    if (!$schema->tableExists($name)) {
+      $schema->createTable($name, $table);
+    }
+  }
+}
+
+/**
+ * Update the set_id field length.
+ */
+function rest_oai_pmh_update_8002() {
+  $schema = Database::getConnection()->schema();
+  $field_name = 'set_id';
+  $field = [
+    'type' => 'varchar',
+    'length' => 65,
+    'not null' => TRUE,
+  ];
+  $tables = [
+    'rest_oai_pmh_set',
+    'rest_oai_pmh_member',
+  ];
+  foreach ($tables as $table) {
+    $schema->changeField($table, $field_name, $field_name, $field);
+  }
+}
+
+/**
+ * Change "limit" column name to "pager_limit" to accomodate Postgres.
+ */
+function rest_oai_pmh_update_8003() {
+  $schema = Database::getConnection()->schema();
+  $table = 'rest_oai_pmh_set';
+  $old_limit_field = 'limit';
+  $new_limit_field = 'pager_limit';
+
+  if ($schema->fieldExists($table, $old_limit_field)) {
+    $schema->dropField($table, $old_limit_field);
+  }
+
+  if (!$schema->fieldExists($table, $new_limit_field)) {
+    $field_spec = [
+      'description' => 'The pager/limit value for the set as defined by Views',
+      'type' => 'int',
+      'unsigned' => TRUE,
+      'not null' => TRUE,
+      'default' => 10,
+    ];
+    $schema->addField($table, $new_limit_field, $field_spec);
+  }
+}
+
+/**
+ * Update storage config for new plugin storage.
+ */
+function rest_oai_pmh_update_8004() {
+  $config = \Drupal::service('config.factory')->getEditable('rest_oai_pmh.settings');
+  switch ($config->get('mapping_source')) {
+    case 'metatag_dc':
+      $mapping_source = 'dublin_core_metatag';
+      break;
+
+    default:
+      $mapping_source = 'dublin_core_rdf';
+  }
+
+  $config->set('metadata_map_plugins', [
+    'oai_dc' => $mapping_source,
+  ]);
+  $config->save();
+}
+
+/**
+ * Update storage config for new cache plugin storage.
+ */
+function rest_oai_pmh_update_8005() {
+  $config = \Drupal::service('config.factory')->getEditable('rest_oai_pmh.settings');
+  $config->set('cache_technique', 'liberal_cache');
+  $config->save();
+}
+
+/**
+ * Update storage config to avoid potentially using dots as config keys.
+ */
+function rest_oai_pmh_update_8006() {
+  $config = \Drupal::service('config.factory')->getEditable('rest_oai_pmh.settings');
+  $old_map_plugin_config = $config->get('metadata_map_plugins');
+  $new_map_plugin_config = [];
+  foreach ($old_map_plugin_config as $prefix => $value) {
+    $new_map_plugin_config[] = [
+      'label' => $prefix,
+      'value' => $value,
+    ];
+  }
+  $config->set('metadata_map_plugins', $new_map_plugin_config);
+  $config->save();
+}
+
+/**
+ * Add some misc indexes.
+ */
+function rest_oai_pmh_update_8007() {
+  // A copy of the schema at this point in time, chopped down to only the
+  // relevant fields so such can be referenced when adding the indexes.
+  $schema = [];
+  $schema['rest_oai_pmh_record'] = [
+    'fields' => [
+      'entity_type' => [
+        'description' => 'The entity id of the record',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ],
+      'created' => [
+        'description' => 'A timestamp indicating when the record was created',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'changed' => [
+        'description' => 'A timestamp indicating when the record was last changed',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+    ],
+  ];
+  $schema['rest_oai_pmh_set'] = [
+    'fields' => [
+      'entity_type' => [
+        'description' => 'The entity type of the set',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ],
+    ],
+  ];
+  $schema['rest_oai_pmh_member'] = [
+    'fields' => [
+      'entity_type' => [
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ],
+      'entity_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'set_id' => [
+        'type' => 'varchar',
+        'length' => 65,
+        'not null' => TRUE,
+      ],
+    ],
+  ];
+
+  // The new indexes to add.
+  $indexes = [
+    'rest_oai_pmh_record' => [
+      'entity_type' => ['entity_type'],
+      'created_ts' => ['created'],
+      'changed_ts' => ['changed'],
+    ],
+    'rest_oai_pmh_member' => [
+      'entity_type' => ['entity_type'],
+      'entity_target' => ['entity_type', 'entity_id'],
+      'set_id' => ['set_id'],
+    ],
+    'rest_oai_pmh_set' => [
+      'entity_type' => ['entity_type'],
+    ],
+  ];
+  $schema_service = Database::getConnection()->schema();
+
+  foreach ($indexes as $table => $idx) {
+    foreach ($idx as $name => $info) {
+      $schema_service->addIndex($table, $name, $info, $schema[$table]);
+    }
+  }
+
+}

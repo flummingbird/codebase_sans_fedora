@@ -1,0 +1,14 @@
+name: 'Config Override Inspector'
+type: module
+description: ''
+core_version_requirement: ^10 || ^11
+php: 8.1
+package: 'Administration'
+configure: coi.settings
+dependencies:
+  - config_override_core_fields:config_override_core_fields (>=4.0.x)
+
+# Information added by Drupal.org packaging script on 2025-01-14
+version: '4.0.1'
+project: 'coi'
+datestamp: 1736839207

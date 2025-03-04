@@ -1,0 +1,80 @@
+# Islandora Services
+# islandora.services.yml:
+services:
+  islandora.eventgenerator:
+    class: Drupal\islandora\EventGenerator\EventGenerator
+    arguments: ['@islandora.utils', '@islandora.media_source_service']
+  islandora.stomp:
+    class: Stomp\StatefulStomp
+    factory: ['Drupal\islandora\StompFactory', create]
+    arguments: ['@config.factory']
+  islandora.jwt-subscriber:
+    class: Drupal\islandora\EventSubscriber\JwtEventSubscriber
+    factory: ['Drupal\islandora\EventSubscriber\JwtEventSubscriber', create]
+    arguments: ['@entity_type.manager', '@current_user']
+    tags:
+      - { name: event_subscriber }
+  islandora.media_link_header_subscriber:
+    class: Drupal\islandora\EventSubscriber\MediaLinkHeaderSubscriber
+    arguments: ['@entity_type.manager', '@entity_field.manager', '@access_manager', '@current_user', '@current_route_match', '@request_stack', '@islandora.utils']
+    tags:
+      - { name: event_subscriber }
+  islandora.node_link_header_subscriber:
+    class: Drupal\islandora\EventSubscriber\NodeLinkHeaderSubscriber
+    arguments: ['@entity_type.manager', '@entity_field.manager', '@access_manager', '@current_user', '@current_route_match', '@request_stack', '@islandora.utils']
+    tags:
+      - { name: event_subscriber }
+  islandora.admin_view_route_subscriber:
+    class: Drupal\islandora\EventSubscriber\AdminViewsRouteSubscriber
+    tags:
+      - { name: event_subscriber }
+  logger.channel.islandora:
+      parent: logger.channel_base
+      arguments: ['islandora']
+  logger.channel.fedora_flysystem:
+      parent: logger.channel_base
+      arguments: ['fedora_flysystem']
+  islandora.media_route_context_provider:
+    class: Drupal\islandora\ContextProvider\MediaRouteContextProvider
+    arguments: ['@current_route_match']
+    tags:
+      - { name: 'context_provider' }
+  islandora.file_route_context_provider:
+    class: Drupal\islandora\ContextProvider\FileRouteContextProvider
+    arguments: ['@current_route_match']
+    tags:
+      - { name: 'context_provider' }
+  islandora.taxonomy_term_route_context_provider:
+    class: Drupal\islandora\ContextProvider\TermRouteContextProvider
+    arguments: ['@current_route_match']
+    tags:
+      - { name: 'context_provider' }
+  islandora.media_source_service:
+    class: Drupal\islandora\MediaSource\MediaSourceService
+    arguments: ['@entity_type.manager', '@current_user', '@language_manager', '@file_system', '@islandora.utils']
+  islandora.utils:
+    class: Drupal\islandora\IslandoraUtils
+    arguments: ['@entity_type.manager', '@entity_field.manager', '@context.manager', '@flysystem_factory', '@language_manager', '@current_user']
+  islandora.entity_mapper:
+    class: Islandora\EntityMapper\EntityMapper
+  islandora.stomp.auth_header_listener:
+    class: Drupal\islandora\EventSubscriber\StompHeaderEventSubscriber
+    arguments: ['@jwt.authentication.jwt']
+    tags:
+      - { name: event_subscriber }
+  islandora.upload_children.batch_processor:
+    class: Drupal\islandora\Form\AddChildrenWizard\ChildBatchProcessor
+    arguments:
+      - '@entity_type.manager'
+      - '@database'
+      - '@current_user'
+      - '@messenger'
+      - '@date.formatter'
+  islandora.upload_media.batch_processor:
+    class: Drupal\islandora\Form\AddChildrenWizard\MediaBatchProcessor
+    arguments:
+      - '@entity_type.manager'
+      - '@database'
+      - '@current_user'
+      - '@messenger'
+      - '@date.formatter'

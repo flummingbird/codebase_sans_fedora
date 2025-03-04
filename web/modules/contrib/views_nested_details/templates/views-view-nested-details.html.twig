@@ -1,0 +1,39 @@
+{#
+/**
+ * @file
+ * Template to display a views row in details.
+ *
+ * Available variables:
+ * - details: Render array of all the details.
+ *
+ * @see template_preprocess_views_view_detail()
+ *
+ * @ingroup views_templates
+ */
+#}
+{%
+  set classes = [
+  'views-view-newspaper-group',
+  options.classes
+]
+%}
+<details {{ attributes.addClass(classes) }}>
+  {% if title %}
+    <summary>{{ title }}</summary>
+  {% endif %}
+  <div class="details__content">
+    <ul class="views-view-newspaper-issues">
+      {% for row in rows %}
+        {%
+          set row_classes = [
+          default_row_class ? 'views-row',
+        ]
+        %}
+        <li{{ row.attributes.addClass(row_classes) }}>
+          {{ row.content }}
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+</details>
+

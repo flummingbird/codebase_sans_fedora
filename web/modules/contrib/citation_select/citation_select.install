@@ -1,0 +1,27 @@
+<?php
+
+/**
+ * @file
+ * Module installation hooks implementation.
+ */
+
+/**
+ * Implements hook_requirements().
+ */
+function citation_select_requirements($phase) {
+  $requirements = [];
+
+  switch ($phase) {
+    case 'runtime':
+    case 'install':
+      if (!class_exists('\Seboettg\CiteProc\CiteProc') || !class_exists('\ADCI\FullNameParser\Parser')) {
+        $requirements['citation_select_dependencies'] = [
+          'title' => t('Citation Select dependencies'),
+          'description' => t("Citation Select requires the seboettg/citeproc-php and adci/full-name-parser libraries. See the module's README.md file for more information."),
+          'severity' => REQUIREMENT_ERROR,
+        ];
+      }
+  }
+
+  return $requirements;
+}
