@@ -250,11 +250,6 @@ content:
     third_party_settings: {  }
     weight: 0
     region: content
-  field_gemini_uri:
-    settings: {  }
-    third_party_settings: {  }
-    weight: 40
-    region: content
   field_genre:
     type: entity_reference_label
     label: inline
@@ -437,6 +432,7 @@ hidden:
   did_image: true
   display_media_entity_view_3: true
   display_media_thumbnail: true
+  field_gemini_uri: true
   field_model: true
   field_pid: true
   field_place_published_country: true

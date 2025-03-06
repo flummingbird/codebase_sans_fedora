@@ -21,11 +21,6 @@ targetEntityType: media
 bundle: video
 mode: source
 content:
-  field_gemini_uri:
-    settings: {  }
-    third_party_settings: {  }
-    weight: 100
-    region: content
   field_media_video_file:
     type: islandora_file_video
     label: visually_hidden
@@ -43,6 +38,7 @@ content:
 hidden:
   created: true
   field_file_size: true
+  field_gemini_uri: true
   field_media_of: true
   field_media_use: true
   field_mime_type: true

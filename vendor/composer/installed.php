@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'islandora/islandora-starter-site',
-        'pretty_version' => '1.0.0+no-version-set',
-        'version' => '1.0.0.0',
-        'reference' => null,
+        'pretty_version' => 'dev-master',
+        'version' => 'dev-master',
+        'reference' => '36fc5cdb393b1f568b41b45880f86f3d869bd399',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -1130,9 +1130,9 @@
             ),
         ),
         'islandora/islandora-starter-site' => array(
-            'pretty_version' => '1.0.0+no-version-set',
-            'version' => '1.0.0.0',
-            'reference' => null,
+            'pretty_version' => 'dev-master',
+            'version' => 'dev-master',
+            'reference' => '36fc5cdb393b1f568b41b45880f86f3d869bd399',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -6,10 +6,5 @@ delete_media_and_files: true
 redirect_after_media_save: true
 upload_form_location: ''
 upload_form_allowed_mimetypes: ''
-gemini_pseudo_bundles:
-  'islandora_object:node': 'islandora_object:node'
-  'audio:media': 'audio:media'
-  'file:media': 'file:media'
-  'image:media': 'image:media'
-  'video:media': 'video:media'
+gemini_pseudo_bundles: {  }
 gemini_url: ''
