@@ -22,7 +22,7 @@
 
 `rm -rf drupal`
 
-`git clone http://github.com/cherryhill/codebase_sans_fedora`
+`git clone http://github.com/flummingbird/codebase_sans_fedora`
 
 `mv codebase_sans_fedora  drupal`
 
