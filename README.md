@@ -38,12 +38,22 @@
 
 ## then log into the site as admin with 'password' not sure why the DRUPAL_DEFAULT_ACCOUNT_PASSWORD doesn't stick...
 
+### if that still hasn't worked you can log into the container and change the password:
+
+`docker exec -it <drupal-container-id> bash`
+
+
+`drush user:password admin "newpassword"`
+
+
 ### for some reason the drush-migrate import needs to be run to populate the content models
 
 ### find the drupal container id and copy it
 
 `docker ps | grep drupal`
 
-### paste the contaner id belo and run this command:
+### paste the contaner id below and run this command:
 
-`docker exec -it <drupal-container-id> composer exec -- drush migrate:import --userid=1 --tag=islandora`
+`docker exec -it <drupal-container-id> composer exec -- drush migrate:import --userid=1 --tag=islandora
+
+
