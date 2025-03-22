@@ -32,7 +32,7 @@
 
 `docker compose --profile dev up --build -d`
 
-## then log into the site at islandora.dev
+## then log into the site at [islandora.dev](https://islandora.dev)
 
 ## log into the site as the admin user using the secrets/DRUPAL_DEFAULT_ACCOUNT_PASSWORD file's contents
 
@@ -54,6 +54,6 @@
 
 ### paste the contaner id below and run this command:
 
-`docker exec -it <drupal-container-id> composer exec -- drush migrate:import --userid=1 --tag=islandora
+`docker exec -it drupal-container-id composer exec -- drush migrate:import --userid=1 --tag=islandora
 
 
