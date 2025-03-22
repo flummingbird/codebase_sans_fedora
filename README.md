@@ -54,6 +54,6 @@
 
 ### paste the contaner id below and run this command:
 
-`docker exec -it <drupal-container-id> composer exec -- drush migrate:import --userid=1 --tag=islandora
+`docker exec -it <drupal-container-id> composer exec -- drush migrate:import --userid=1 --tag=islandora`
 
 
