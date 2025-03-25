@@ -4,9 +4,9 @@
  
 ### To get started from scratch:
 
-`git checkout https://github.com/flummingbird/isle-site-template`
+`git clone https://github.com/flummingbird/isle-site-template-sans-fedora
 
-`cd isle-site-template`
+`cd isle-site-template-sans-fedora
 
 ### Generate secrets
 
