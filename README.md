@@ -56,4 +56,7 @@
 
 `docker exec -it <drupal-container-id> composer exec -- drush migrate:import --userid=1 --tag=islandora`
 
+### enable the stark theme 
+
+`docker exec -it <drupal-container-id> drush theme:enable stark`
 
