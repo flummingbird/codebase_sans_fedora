@@ -4,7 +4,7 @@
  
 ## To get started from scratch:
 
-`git checkout https://github.com/Islandora-Devops/isle-site-template`
+`git checkout https://github.com/flummingbird/isle-site-template`
 
 `cd isle-site-template`
 
