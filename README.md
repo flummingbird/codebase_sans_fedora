@@ -38,13 +38,9 @@
 
 ### then log into the site as admin with 'password' not sure why the DRUPAL_DEFAULT_ACCOUNT_PASSWORD doesn't stick...
 
-### if that still hasn't worked you can log into the container and change the password:
+### if that still hasn't worked you can change the password:
 
-`docker exec -it <drupal-container-id> bash`
-
-
-`drush user:password admin "newpassword"`
-
+`docker exec -it <drupal-container-id> drush user:password admin "newpassword"`
 
 ### for some reason the drush-migrate import needs to be run to populate the content models
 
